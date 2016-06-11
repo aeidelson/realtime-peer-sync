@@ -6,7 +6,7 @@ build="build.rs"
 
 [lib]
 name = "rps"
-crate-type = ["staticlib"]
+crate-type = ["staticlib", "rlib"]
 
 [build-dependencies]
 # rusty-cheddar is used for automatically generating c bindings.
