@@ -1,0 +1,15 @@
+[package]
+name = "rps"
+version = "0.1.0"
+authors = ["Aaron Eidelson <aeidelson@gmail.com>"]
+build="build.rs"
+
+[lib]
+name = "rps"
+crate-type = ["staticlib"]
+
+[build-dependencies]
+# rusty-cheddar is used for automatically generating c bindings.
+rusty-cheddar = "0.3.3"
+
+[dependencies]
