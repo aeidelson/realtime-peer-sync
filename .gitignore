@@ -1,2 +1,3 @@
 /lib/target/*
 lib/Cargo.lock
+/lib/include/*
