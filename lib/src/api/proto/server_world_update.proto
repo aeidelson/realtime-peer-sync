@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+import "common.proto";
+
+message WorldUpdatePush {
+  // Required. Contains what has changed since the client's last ack'd version.
+  ServerWorldStateDiff modified_world_state = 1;
+}

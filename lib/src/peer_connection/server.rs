@@ -4,13 +4,13 @@ use std::sync::mpsc;
 use std::time::Duration;
 use std::io::Read;
 
+// Import the API messages.
+use ::api::gen::common::{ServerInfo, ClientInfo};
+
 pub struct Message {
 }
 
 pub type ClientId = String;
-
-pub struct ClientInfo {
-}
 
 // Options for configuring the server.
 pub struct ServerConfig {

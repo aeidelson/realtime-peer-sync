@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+import "common.proto";
+
+// Notifies the server of new client-originated changes (events).
+message SendNewEventsRequest {
+  // Required. The latest authoritative world verstion the client has received.
+  // Can eventually be used to detect conflicts.
+  uint64 client_world_version = 1;
+
+  // A set of events to notify the server about.
+  // Note: events with an id already in use will be ignored.
+  repeated Event event = 2;
+}
+
+message SendNewEventsResponse {
+}

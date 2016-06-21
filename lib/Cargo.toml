@@ -13,3 +13,6 @@ crate-type = ["staticlib", "rlib"]
 rusty-cheddar = "0.3.3"
 
 [dependencies]
+
+[dependencies.protobuf]
+git = "https://github.com/stepancheg/rust-protobuf.git"

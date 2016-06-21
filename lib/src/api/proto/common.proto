@@ -1,0 +1,104 @@
+syntax = "proto3";
+
+message PublicClientInfo {
+  // Required.
+  string client_id = 1;
+}
+
+// All information about the requesting client. Contains both public information and
+// information that is privileged to just the client and server.
+message ClientInfo {
+  // Required. Information about the client that can be shared with other clients.
+  PublicClientInfo public_info = 1;
+}
+
+// All information about a server that is sharable to connected clients.
+message ServerInfo {
+}
+
+
+// A shallow object is the main data type making up world state.
+// This is a convenience provided to clients when reading world state.
+message Object {
+  // Required.
+  string object_id = 1;
+
+  // Required. contains the actual data of the object. Values can be of any type, so it's
+  // up to the application developer to enforce types.
+  map<string, bytes> payload = 2;
+}
+
+
+// This is used when creating events and internally to represent a single change to
+// to a single object.
+message ObjectDiff {
+  message NewObjectModification {
+    // Required.
+    map<string, bytes> full_payload = 1;
+  }
+
+  message DeletedObjectModfication {
+    // No fields needed yet, just the fact that this is populated will signal a deletion.
+  }
+
+  message AddedFieldsModification {
+    // Required.
+    map<string, bytes> added = 1;
+  }
+
+  message UpdatedFieldsModification {
+    // Required.
+    map<string, bytes> updated = 1;
+  }
+
+  message RemovedFieldsModification {
+    // Required to be non-empty.
+    repeated string removed_field = 1;
+  }
+
+  // Required.
+  string object_id = 1;
+  
+  // One of these changes can apply.
+  oneof modification {
+    NewObjectModification new_object = 2;
+    DeletedObjectModfication deleted_object = 3;
+    AddedFieldsModification added_fields = 4;
+    UpdatedFieldsModification updated_fields = 5;
+    RemovedFieldsModification removed_fields = 6;
+  }
+}
+
+// Represents some set of changes to the world state. Can be created by either client or
+// server.
+message WorldStateDiff {
+	repeated ObjectDiff object_change = 1;
+}
+
+// Represents an authoritative view of a change in the world, from one world version to another.
+message ServerWorldStateDiff {
+  // Required. The version of the world that the server believes the client has. The client should
+  // re-connect if this is greater than the actual client version (since something went horribly
+  // wrong).
+  uint64 expected_client_version = 1;
+  
+  // Required. The new version of the world after the diff is applied.
+  // If this is less than the actual client version, the diff should be ignored.
+  uint64 new_version = 2;
+
+  // Rquired. Changes for the client to apply locally.
+  WorldStateDiff changes = 3;
+}
+
+// A single event sent from client to server, used for modifying world state.
+message Event {
+  // Required. A random uuid generated on the client.
+  string event_id = 1;
+
+  // The client that generated the event.
+  // TODO(aeidelson): Figure out how we represent server events (i.e. a server physics loop).
+  string acting_client_id = 2;
+
+  // The set of changes the client wants to apply.
+  WorldStateDiff changes = 3;
+}
