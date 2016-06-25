@@ -3,11 +3,13 @@ use std::thread;
 use std::sync::mpsc;
 use std::time::Duration;
 use std::io::Read;
+use protobuf::Message;
 
-// Import the API messages.
+use ::api::gen::server_lifeline_ping::ServerLifelinePing;
 use ::api::gen::common::{ServerInfo, ClientInfo};
 
-pub struct Message {
+// TODO: Replace this with a protobuf
+pub struct DirectMessage {
 }
 
 pub type ClientId = String;
@@ -61,7 +63,7 @@ impl Server {
     }
 
     // Sends a (udp) message directly to a single connected client.
-    pub fn direct_udp_message(&mut self, client_id: &ClientId, message: &Message) {
+    pub fn direct_udp_message(&mut self, client_id: &ClientId, message: &DirectMessage) {
         // TODO: Lookup client address, serialize and send message.
         let mut msg= String::from("Direct message!");
         self.direct_udp_socket.send_to(msg.as_bytes(), "0.0.0.0:0").unwrap();
@@ -89,9 +91,6 @@ impl Server {
 
         thread::spawn(move || {
             loop {
-                // Will block until there's an incoming request.
-                let (mut stream, addr) = listener.accept().unwrap();
-
                 // Check if shutdown was requested.
                 // TODO(aeidelson): Unfortunately there's no good way to automatically run this now,
                 // aside from waiting for an incoming tcp connection.
@@ -103,16 +102,20 @@ impl Server {
                     Err(mpsc::TryRecvError::Empty) => {}
                 }
 
+                // Will block until there's something to process.
+                let (mut stream, addr) = listener.accept().unwrap();
+
                 // Handle the incoming request.
                 let mut result_str = String::new();
                 stream.read_to_string(&mut result_str).unwrap();
+                println!("Received from client: {}", result_str);
             }
         });
         return port;
     }
 
     // Starts a thread to signal to clients that the server is alive.
-    fn start_udp_alive_broadcast(&mut self, tcp_server_port: u16) {
+    fn start_udp_alive_broadcast<'a>(&mut self, tcp_server_port: u16) {
         // We create a channel to listen for the shutdown signal.
         let (shutdown_sender, shutdown_receiver) = mpsc::channel::<bool>();
         self.shutdown_channel_senders.push(shutdown_sender);
@@ -128,6 +131,13 @@ impl Server {
             // TODO: remove multicast_loop when not testing locally
             udp_broadcast_socket.set_multicast_loop_v4(true).unwrap();
 
+            // Build the message to broadcast.
+            let mut broadcast_message = ServerLifelinePing::new();
+            broadcast_message.set_tcp_port(u32::from(tcp_server_port));
+            let broadcast_message_byte_vector  = broadcast_message.write_to_bytes().unwrap();
+            let broadcast_message_bytes: &[u8] =
+                broadcast_message_byte_vector.as_slice();
+
             loop {
                 // Check for server shutdown.
                 match shutdown_receiver.try_recv() {
@@ -138,11 +148,7 @@ impl Server {
                     Err(mpsc::TryRecvError::Empty) => {}
                 }
 
-                // Build a message
-                // TODO(aeidelson): This message should be structured and contain the tcp port
-                // address, so clients know how to reach the server.
-                let mut msg= String::from("Server is alive!");
-                udp_broadcast_socket.send_to(msg.as_bytes(), broadcast_address).unwrap();
+                udp_broadcast_socket.send_to(&broadcast_message_bytes, broadcast_address).unwrap();
                 println!("braodcast to {}", broadcast_address);
                 thread::sleep(Duration::from_millis(500));
             }

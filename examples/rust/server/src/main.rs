@@ -13,11 +13,9 @@ fn main() {
 
     server.start();
 
-    println!("Hello, world!");
+    println!("Hello, world from server!");
 
-    thread::sleep(Duration::from_secs(10));
+    thread::sleep(Duration::from_secs(120));
 
     server.shutdown();
-
-    thread::sleep(Duration::from_secs(10));
 }

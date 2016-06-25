@@ -1,1 +1,9 @@
 syntax = "proto3";
+
+// A udp broadcast to notify clients that the server is alive and running.
+message ServerLifelinePing {
+  // Note that the server address should be determined by the incoming request on the client.
+
+  // Server tcp port
+  uint32 tcp_port = 1;
+}
