@@ -49,21 +49,24 @@ impl Client {
                     Err(mpsc::TryRecvError::Empty) => {}
                 }
 
-                // TODO: Only clear what was read.
-                for i in 0..buf.len() {
-                    buf[i] = 0;
-                }
-
                 match socket.recv_from(&mut buf) {
                     Ok((read, addr)) => {
                         if read > 0 {
                             let mut broadcast_message = ServerLifelinePing::new();
-                            broadcast_message.merge_from_bytes(&buf);
-                            println!(
-                                "got message from addr {} containing port {}",
-                                addr,
-                                broadcast_message.get_tcp_port(),
-                            );
+                            match broadcast_message.merge_from_bytes(&buf[..read]) {
+                                Ok(_) => {
+                                    // We have a message from the server to handle
+                                    println!(
+                                        "got message from addr {} containing port {}",
+                                        addr,
+                                        broadcast_message.get_tcp_port(),
+                                    );
+                                }
+                                // Something went wrong.
+                                Err(e) => {
+                                    println!("something went wrong! {}", e);
+                                }
+                            }
                         }
                     }
                     // An error happened or, more likely, there weren't any messages to process
@@ -87,8 +90,8 @@ impl Client {
     pub fn discovered_servers(&self) {
     }
 
-    // Functions for connecting to a server.
-    // Functions for interacting with a connected server.
+    // TODO: Functions for connecting to a server.
+    // TODO: Functions for interacting with a connected server.
 }
 
 // Private interface for the client.
