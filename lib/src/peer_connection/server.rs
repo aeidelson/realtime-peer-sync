@@ -6,7 +6,7 @@ use std::io::Read;
 use protobuf::Message;
 
 use ::api::gen::server_lifeline_ping::ServerLifelinePing;
-use ::api::gen::common::{ServerInfo, ClientInfo};
+use ::api::gen::common::ServerInfo;
 
 // TODO: Replace this with a protobuf
 pub struct DirectMessage {
@@ -65,12 +65,12 @@ impl Server {
     // Sends a (udp) message directly to a single connected client.
     pub fn direct_udp_message(&mut self, client_id: &ClientId, message: &DirectMessage) {
         // TODO: Lookup client address, serialize and send message.
-        let mut msg= String::from("Direct message!");
+        let msg = String::from("Direct message!");
         self.direct_udp_socket.send_to(msg.as_bytes(), "0.0.0.0:0").unwrap();
     }
 
     // Shuts down the server and consumes itself.
-    pub fn shutdown(mut self) {
+    pub fn shutdown(self) {
         for shutdown_channel_sender in &self.shutdown_channel_senders {
             // Shutdown the thread.
             shutdown_channel_sender.send(true).unwrap();
@@ -103,7 +103,7 @@ impl Server {
                 }
 
                 // Will block until there's something to process.
-                let (mut stream, addr) = listener.accept().unwrap();
+                let (mut stream, _) = listener.accept().unwrap();
 
                 // Handle the incoming request.
                 let mut result_str = String::new();
@@ -115,7 +115,7 @@ impl Server {
     }
 
     // Starts a thread to signal to clients that the server is alive.
-    fn start_udp_alive_broadcast<'a>(&mut self, tcp_server_port: u16) {
+    fn start_udp_alive_broadcast(&mut self, tcp_server_port: u16) {
         // We create a channel to listen for the shutdown signal.
         let (shutdown_sender, shutdown_receiver) = mpsc::channel::<bool>();
         self.shutdown_channel_senders.push(shutdown_sender);
@@ -125,7 +125,7 @@ impl Server {
         thread::spawn(move || {
             // Note: This socket is private to this thread because it shouldn't be needed
             // externally. (Direct broadcasts happen over their own socket).
-            let mut udp_broadcast_socket = net::UdpSocket::bind("0.0.0.0:0").unwrap();
+            let udp_broadcast_socket = net::UdpSocket::bind("0.0.0.0:0").unwrap();
             udp_broadcast_socket.set_broadcast(true).unwrap();
 
             // TODO: remove multicast_loop when not testing locally

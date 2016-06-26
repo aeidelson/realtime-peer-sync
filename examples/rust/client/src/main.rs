@@ -16,7 +16,12 @@ fn main() {
 
     thread::sleep(Duration::from_secs(10));
 
+    
+    println!("Discovered servers: {:?}", client.discovered_servers());
+
     client.stop_discovering_servers();
+
+    println!("Discovered servers (again): {:?}", client.discovered_servers());
 
     thread::sleep(Duration::from_secs(10));
 }
