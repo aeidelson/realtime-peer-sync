@@ -36,12 +36,12 @@ pub struct Server {
 impl Server {
     // Starts asynchronously accepting incoming requests and broadcasting updates to connected clients.
     // This function is non-blocking.
-    pub fn start_server(&self) -> io::Result<()> {
+    pub fn start(&self) -> io::Result<()> {
         Ok(())
     }
 
     // Shuts down and cleans up the server.
-    pub fn shutdown() -> io::Result<()> {
+    pub fn shutdown(self) -> io::Result<()> {
         Ok(())
     }
 }

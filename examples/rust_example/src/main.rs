@@ -1,7 +1,13 @@
+extern crate piston_window;
 extern crate RPS;
 
 use std::time;
 use std::thread;
+
+use piston_window::{
+    PistonWindow,
+    WindowSettings,
+};
 
 use RPS::{client, common, server};
 use RPS::common::{
@@ -9,20 +15,39 @@ use RPS::common::{
     CalculationEvent,
 };
 
+
 fn main() {
-    let c = client::new(client::ClientConfig{
+    let client = client::new(client::ClientConfig{
         calculate_updates: calculate_updates_handler,
         desired_calculate_updates_frequency_hz: 5,
     });
 
-    let s = server::new(server::ServerConfig{
+    let server = server::new(server::ServerConfig{
         calculate_updates: calculate_updates_handler,
         desired_calculate_updates_frequency_hz: 5,
     });
 
-    s.start_server().unwrap();
+    server.start().unwrap();
 
-    thread::sleep(time::Duration::from_secs(10));
+    // Start piston to draw and handle user input.
+    let mut window: PistonWindow =
+        WindowSettings::new("Hello Piston!", [640, 480])
+            .exit_on_esc(true).build().unwrap();
+    while let Some(e) = window.next() {
+        window.draw_2d(&e, |c, g| {
+            // Note: The client can be accessed here and is borrowed.
+            let _ = client.user_interaction_started();
+            //client.shutdown();
+
+            piston_window::clear([1.0; 4], g);
+            piston_window::rectangle([1.0, 0.0, 0.0, 1.0], // red
+                                      [0.0, 0.0, 100.0, 100.0],
+                                      c.transform, g);
+        });
+    }
+    
+    server.shutdown();
+    client.shutdown();
 }
 
 fn calculate_updates_handler(

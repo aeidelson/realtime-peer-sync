@@ -50,7 +50,7 @@ impl Client {
 
     // Returns a copy of the current (local) state of the world.
     // TODO(aeidelson): If a copy is too slow, we can explore using a R/W lock or something clever.
-    pub fn get_world_state(self) -> WorldState {
+    pub fn get_world_state(&self) -> WorldState {
         return WorldState{}
     }
 
@@ -60,17 +60,17 @@ impl Client {
     // need to be careful to not mess with the user experience.
     // TODO(aeidelson): This should probably accept object/field so we can be extra smart about
     // things.
-    pub fn user_interaction_started() -> UserInteractionToken {
+    pub fn user_interaction_started(&self) -> UserInteractionToken {
         String::from("token")
     }
-    pub fn user_interaction_ended(token: &UserInteractionToken) {
+    pub fn user_interaction_ended(&self, token: &UserInteractionToken) {
     }
 
-    pub fn new_user_events(user_events: Vec<UserEvent>) {
+    pub fn new_user_events(&self, user_events: Vec<UserEvent>) {
     }
 
     // Shuts down and cleans up the client.
-    pub fn shutdown() -> io::Result<()> {
+    pub fn shutdown(self) -> io::Result<()> {
         Ok(())
     }
 }
