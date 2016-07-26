@@ -1,4 +1,8 @@
+// Code to set up a client.
+pub mod client;
 
-pub fn hello_world() {
-    println!("Hello world!!");
-}
+// Code to set up a server.
+pub mod server;
+
+// Common definitions required to setup the client and server.
+pub mod common;
