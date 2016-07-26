@@ -1,0 +1,13 @@
+[package]
+name = "RPS"
+version = "0.1.0"
+authors = ["Aaron Eidelson <aeidelson@dropbox.com>"]
+
+[lib]
+name = "RPS"
+crate-type = ["staticlib", "rlib"]
+
+[dependencies]
+
+[dependencies.protobuf]
+git = "https://github.com/stepancheg/rust-protobuf.git"

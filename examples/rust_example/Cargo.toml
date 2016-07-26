@@ -1,0 +1,7 @@
+[package]
+name = "rust_example"
+version = "0.1.0"
+authors = ["Aaron Eidelson <aeidelson@dropbox.com>"]
+
+[dependencies]
+RPS = { path = "../../lib", version = "*"}
