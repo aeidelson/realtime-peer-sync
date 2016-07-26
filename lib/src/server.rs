@@ -1,5 +1,8 @@
 use std::time;
 use std::io;
+use std::thread;
+
+use ::utils;
 
 use ::common::{
     WorldState,
@@ -34,6 +37,11 @@ impl Server {
     // Starts asynchronously accepting incoming requests and broadcasting updates to connected clients.
     // This function is non-blocking.
     pub fn start_server(&self) -> io::Result<()> {
+        Ok(())
+    }
+
+    // Shuts down and cleans up the server.
+    pub fn shutdown() -> io::Result<()> {
         Ok(())
     }
 }

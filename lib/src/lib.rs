@@ -6,3 +6,6 @@ pub mod server;
 
 // Common definitions required to setup the client and server.
 pub mod common;
+
+// The following are internal to the library.
+mod utils;

@@ -68,4 +68,9 @@ impl Client {
 
     pub fn new_user_events(user_events: Vec<UserEvent>) {
     }
+
+    // Shuts down and cleans up the client.
+    pub fn shutdown() -> io::Result<()> {
+        Ok(())
+    }
 }

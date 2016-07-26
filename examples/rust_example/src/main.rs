@@ -1,6 +1,7 @@
 extern crate RPS;
 
 use std::time;
+use std::thread;
 
 use RPS::{client, common, server};
 use RPS::common::{
@@ -20,6 +21,8 @@ fn main() {
     });
 
     s.start_server().unwrap();
+
+    thread::sleep(time::Duration::from_secs(10));
 }
 
 fn calculate_updates_handler(
