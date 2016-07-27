@@ -1,8 +1,19 @@
 syntax = "proto3";
 
 message PublicClientInfo {
-  // Required.
+  // Required. A random uuid.
   string client_id = 1;
+
+  // Required.
+  string name = 2;
+}
+
+message PublicServerInfo {
+  // Required.
+  uint32 tcp_port = 1;
+
+  // Required.
+  string name = 2;
 }
 
 // All information about the requesting client. Contains both public information and
@@ -16,63 +27,36 @@ message ClientInfo {
 message ServerInfo {
 }
 
-
-// A shallow object is the main data type making up world state.
-// This is a convenience provided to clients when reading world state.
-message Object {
-  // Required.
-  string object_id = 1;
-
-  // Required. contains the actual data of the object. Values can be of any type, so it's
-  // up to the application developer to enforce types.
-  map<string, bytes> payload = 2;
-}
-
-
-// This is used when creating events and internally to represent a single change to
-// to a single object.
+// This is used to represent changes to a single object.
+// TODO(aeidelson): It's unclear how specific this API should be. Should re-evaluate this in the
+// future and see if it makes sense to be more restrictive (like seperating updates and adds).
 message ObjectDiff {
-  message NewObjectModification {
-    // Required.
-    map<string, bytes> full_payload = 1;
+  // Used whenever the fields of an object are updated, including when the object is new.
+  message UpsertObjectModification {
+    // Map of field key, value to update/insert.
+    map<string, bytes> fields_to_upsert = 1;
+
+    // Repeated list of field keys to delete.
+    repeated string field_to_delete = 2;
   }
 
   message DeletedObjectModfication {
     // No fields needed yet, just the fact that this is populated will signal a deletion.
   }
 
-  message AddedFieldsModification {
-    // Required.
-    map<string, bytes> added = 1;
-  }
-
-  message UpdatedFieldsModification {
-    // Required.
-    map<string, bytes> updated = 1;
-  }
-
-  message RemovedFieldsModification {
-    // Required to be non-empty.
-    repeated string removed_field = 1;
-  }
-
-  // Required.
-  string object_id = 1;
-  
   // One of these changes can apply.
   oneof modification {
-    NewObjectModification new_object = 2;
-    DeletedObjectModfication deleted_object = 3;
-    AddedFieldsModification added_fields = 4;
-    UpdatedFieldsModification updated_fields = 5;
-    RemovedFieldsModification removed_fields = 6;
+    UpsertObjectModification upserted_object = 1;
+    DeletedObjectModfication deleted_object = 2;
   }
 }
 
 // Represents some set of changes to the world state. Can be created by either client or
 // server.
 message WorldStateDiff {
-	repeated ObjectDiff object_change = 1;
+  // A map from object id to changes to that object.
+  // If an object doesn't already exist, it will be considered a new object.
+  map<string, ObjectDiff> object_change = 1;
 }
 
 // Represents an authoritative view of a change in the world, from one world version to another.
@@ -96,7 +80,6 @@ message Event {
   string event_id = 1;
 
   // The client that generated the event.
-  // TODO(aeidelson): Figure out how we represent server events (i.e. a server physics loop).
   string acting_client_id = 2;
 
   // The set of changes the client wants to apply.

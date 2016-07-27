@@ -1,2 +1,0 @@
-
-pub const NETWORK_BUFFER_SIZE_BYTES: usize = 10000;
