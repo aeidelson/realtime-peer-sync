@@ -1,5 +1,6 @@
 use std::time;
 use std::io;
+use std::collections::HashMap;
 
 use ::common::{
     WorldState,
@@ -51,7 +52,9 @@ impl Client {
     // Returns a copy of the current (local) state of the world.
     // TODO(aeidelson): If a copy is too slow, we can explore using a R/W lock or something clever.
     pub fn get_world_state(&self) -> WorldState {
-        return WorldState{}
+        return WorldState{
+            objects: HashMap::new(),
+        }
     }
 
     
