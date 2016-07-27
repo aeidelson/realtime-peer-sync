@@ -60,10 +60,10 @@ impl Client {
     // need to be careful to not mess with the user experience.
     // TODO(aeidelson): This should probably accept object/field so we can be extra smart about
     // things.
-    pub fn user_interaction_started(&self) -> UserInteractionToken {
+    pub fn continuous_user_interaction_started(&self) -> UserInteractionToken {
         String::from("token")
     }
-    pub fn user_interaction_ended(&self, token: &UserInteractionToken) {
+    pub fn continuous_user_interaction_ended(&self, token: &UserInteractionToken) {
     }
 
     pub fn new_user_events(&self, user_events: Vec<UserEvent>) {
