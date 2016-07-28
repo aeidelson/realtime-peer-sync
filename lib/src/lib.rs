@@ -1,3 +1,5 @@
+extern crate protobuf;
+
 // Code to set up a client.
 pub mod client;
 
@@ -8,4 +10,6 @@ pub mod server;
 pub mod common;
 
 // The following are internal to the library.
+mod world_store;
 mod utils;
+mod internal_protocol;

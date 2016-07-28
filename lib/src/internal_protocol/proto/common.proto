@@ -34,7 +34,7 @@ message ObjectDiff {
   // Used whenever the fields of an object are updated, including when the object is new.
   message UpsertObjectModification {
     // Map of field key, value to update/insert.
-    map<string, bytes> fields_to_upsert = 1;
+    map<string, bytes> field_to_upsert = 1;
 
     // Repeated list of field keys to delete.
     repeated string field_to_delete = 2;
@@ -61,17 +61,12 @@ message WorldStateDiff {
 
 // Represents an authoritative view of a change in the world, from one world version to another.
 message ServerWorldStateDiff {
-  // Required. The version of the world that the server believes the client has. The client should
-  // re-connect if this is greater than the actual client version (since something went horribly
-  // wrong).
-  uint64 expected_client_version = 1;
-  
   // Required. The new version of the world after the diff is applied.
   // If this is less than the actual client version, the diff should be ignored.
-  uint64 new_version = 2;
+  uint64 new_version = 1;
 
-  // Rquired. Changes for the client to apply locally.
-  WorldStateDiff changes = 3;
+  // Required. Changes for the client to apply locally.
+  WorldStateDiff changes = 2;
 }
 
 // A single event sent from client to server, used for modifying world state.

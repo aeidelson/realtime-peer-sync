@@ -3,6 +3,11 @@ syntax = "proto3";
 import "common.proto";
 
 message WorldUpdatePush {
+  // Required. The version of the world that the server believes the client has. The client should
+  // re-connect if this is greater than the actual client version (since something went horribly
+  // wrong).
+  uint64 expected_client_version = 1;
+
   // Required. Contains what has changed since the client's last ack'd version.
-  ServerWorldStateDiff modified_world_state = 1;
+  ServerWorldStateDiff modified_world_state = 2;
 }
