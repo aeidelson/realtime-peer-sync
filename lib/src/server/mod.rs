@@ -1,6 +1,9 @@
 use std::time;
 use std::io;
 use std::thread;
+use std::sync::{Arc, RwLock};
+
+use ::world_store::ServerWorldStore;
 
 use ::utils;
 
@@ -27,10 +30,15 @@ pub struct ServerConfig {
 
 pub fn new(config: ServerConfig) -> Server {
     // TODO: Confirm only one client created.
-    return Server{};
+    return Server{
+        store_lock: Arc::new(RwLock::new(ServerWorldStore::new())),
+    };
 }
 
 pub struct Server {
+    // Contains the current state of the world.
+    // This is considered to be the authoritative representation of the world.
+    store_lock: Arc<RwLock<ServerWorldStore>>,
 }
 
 impl Server {

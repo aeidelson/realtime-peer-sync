@@ -12,18 +12,6 @@ mod store_impl;
 use ::internal_protocol::gen::common;
 
 
-pub fn new_client_store() -> ClientWorldStore {
-    ClientWorldStore{
-        world_store_impl: store_impl::WorldStoreImpl::new(),
-    }
-}
-
-pub fn new_server_store() -> ServerWorldStore {
-    ServerWorldStore{
-        world_store_impl: store_impl::WorldStoreImpl::new(),
-    }
-}
-
 // A thin wrapper around the actual store, containing client-specific code.
 pub struct ClientWorldStore {
     world_store_impl: store_impl::WorldStoreImpl,
@@ -33,18 +21,24 @@ pub struct ClientWorldStore {
 // bake that into the client store, since it's actually a construct of how the data is stored on
 // the server. Clients should keep track of the authoritative version seperately.
 impl ClientWorldStore {
+    pub fn new() -> ClientWorldStore {
+        ClientWorldStore{
+            world_store_impl: store_impl::WorldStoreImpl::new(),
+        }
+    }
+
     // Updates the world state by applying the given diff. The diff should be coppied before being
     // stored, and won't be directly accessible from the WorldStore after this is called.
     //
     // Note: Right now this speaks in diffs rather than events.
     // This may be worth re-considering if we ever want to surface events
     // to the consumer.
-    fn update_world_state(&mut self, diff: &common::WorldStateDiff) {
+    pub fn update_world_state(&mut self, diff: &common::WorldStateDiff) {
         self.world_store_impl.update_world_state(diff);
     }
 
     // Returns the state of the world, after every diff has been applied to it (in order).
-    fn current_world_state(&self) -> common::WorldStateDiff {
+    pub fn current_world_state(&self) -> common::WorldStateDiff {
         self.world_store_impl.world_state_from_beginning().take_changes()
     }
 }
@@ -55,19 +49,25 @@ pub struct ServerWorldStore {
 }
 
 impl ServerWorldStore {
+    pub fn new() -> ServerWorldStore {
+        ServerWorldStore{
+            world_store_impl: store_impl::WorldStoreImpl::new(),
+        }
+    }
+
     // Updates the world state by applying the given diff. The diff should be coppied before being
     // stored, and won't be directly accessible from the WorldStore after this is called.
     //
     // Note: Right now this speaks in diffs rather than events.
     // This may be worth re-considering if we ever want to surface events
     // to the consumer.
-    fn update_world_state(&mut self, diff: &common::WorldStateDiff) {
+    pub fn update_world_state(&mut self, diff: &common::WorldStateDiff) {
         self.world_store_impl.update_world_state(diff);
     }
 
     // Returns the state of the world, after every diff has been applied to it (in order).
     // Also returns versioning info.
-    fn world_state_from_beginning(&self) -> common::ServerWorldStateDiff {
+    pub fn world_state_from_beginning(&self) -> common::ServerWorldStateDiff {
         self.world_store_impl.world_state_from_beginning()
     }
 
@@ -75,7 +75,7 @@ impl ServerWorldStore {
     // Also returns versioning info.
     //
     // NOTE: Should store version in a way that allows us to merge to merge diffs in the future.
-    fn world_state_from_version(&self, version: &u64) -> common::ServerWorldStateDiff {
+    pub fn world_state_from_version(&self, version: &u64) -> common::ServerWorldStateDiff {
         self.world_store_impl.world_state_from_version(version)
     }
 }

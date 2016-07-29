@@ -1,5 +1,6 @@
 use std::time;
 use std::io;
+use std::sync::{Arc, RwLock};
 use std::collections::HashMap;
 
 use ::common::{
@@ -7,6 +8,8 @@ use ::common::{
     UserEvent,
     CalculationEvent,
 };
+
+use ::world_store::ClientWorldStore;
 
 pub struct DiscoveredServerInfo {
 }
@@ -23,17 +26,22 @@ pub struct ClientConfig {
         time_since_last_update: time::Duration,
     ) -> Vec<CalculationEvent>,
 
-
     // Desired number of times to call calculate_updates per second.
     pub desired_calculate_updates_frequency_hz: u32,
 }
 
 pub fn new(config: ClientConfig) -> Client {
     // TODO: Confirm only one client created.
-    return Client{};
+    return Client{
+        calculated_store_lock: Arc::new(RwLock::new(ClientWorldStore::new())),
+    };
 }
 
 pub struct Client {
+    // Contains the real-time state of the world. Note that this can include optimistic state not
+    // povided by the server, like local server calculations. This is what is queried when
+    // `get_world_state()` is called.
+    calculated_store_lock: Arc<RwLock<ClientWorldStore>>,
 }
 
 impl Client {

@@ -16,14 +16,10 @@ pub struct Field {
 
 // An random UUIDv4, to be provided by the client.
 pub type ObjectId = String;
-// A client-provided type. This is entirely for use by the consumer to classify objects, and is
-// opaque to the system.
-pub type ObjectType = String;
 
 // Represents a single object in the "world".
 pub struct Object {
     pub object_id: ObjectId,
-    pub object_type: ObjectType,
 
     // Fields stored in the object.
     // Note: The system dedupes based on key, so there theoretically shouldn't be any
@@ -55,10 +51,13 @@ pub struct Event {
 }
 
 // Represents an update to a single object.
-// TODO(aeidelson): This may be cleaner as wrapped enums?
+// TODO(aeidelson): This may be cleaner as wrapped enums? This API also isn't the best.
 pub struct EventObjectUpdate {
+    // Should the object be deleted? If set, the following fields are ignored.
+    pub delete: Option<bool>,
+
     pub fields_to_upsert: Vec<Field>,
-    pub fields_to_remove: Vec<FieldValue>,
+    pub fields_to_remove: Vec<FieldKey>,
 }
 
 // An event which is the result of a user action.
