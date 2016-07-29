@@ -41,12 +41,11 @@ impl ClientWorldStore {
     // to the consumer.
     fn update_world_state(&mut self, diff: &common::WorldStateDiff) {
         self.world_store_impl.update_world_state(diff);
-        //store_impl::WorldStoreImpl::update_world_state(self as store_impl::WorldStoreImpl, diff);
     }
 
     // Returns the state of the world, after every diff has been applied to it (in order).
     fn current_world_state(&self) -> common::WorldStateDiff {
-        common::WorldStateDiff::new()
+        self.world_store_impl.world_state_from_beginning().take_changes()
     }
 }
 
@@ -63,19 +62,20 @@ impl ServerWorldStore {
     // This may be worth re-considering if we ever want to surface events
     // to the consumer.
     fn update_world_state(&mut self, diff: &common::WorldStateDiff) {
+        self.world_store_impl.update_world_state(diff);
     }
 
     // Returns the state of the world, after every diff has been applied to it (in order).
     // Also returns versioning info.
     fn world_state_from_beginning(&self) -> common::ServerWorldStateDiff {
-        common::ServerWorldStateDiff::new()
+        self.world_store_impl.world_state_from_beginning()
     }
 
-    // World state after (but not including) the given version.
+    // World state after (and not including) the given version.
     // Also returns versioning info.
     //
     // NOTE: Should store version in a way that allows us to merge to merge diffs in the future.
     fn world_state_from_version(&self, version: &u64) -> common::ServerWorldStateDiff {
-        common::ServerWorldStateDiff::new()
+        self.world_store_impl.world_state_from_version(version)
     }
 }

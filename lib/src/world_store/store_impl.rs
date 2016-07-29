@@ -10,10 +10,13 @@ use ::internal_protocol::gen::common;
 
 // This struct has most of the shared logic used by both the client and server world states.
 pub struct WorldStoreImpl {
-    // Keeps track of all changes to the world. World version is determined by position in vector.
+    // Keeps track of all changes to the world. World version is determined by position in vector
+    // (plus 1).
     // TODO(aeidelson): This is doesn't scale at all. We will need something smarter soon.
     changes: Vec<common::WorldStateDiff>,
 }
+
+pub const BEGINNING_OF_TIME_VERSION: u64 = 0;
 
 impl WorldStoreImpl {
     pub fn new() -> WorldStoreImpl {
@@ -26,10 +29,32 @@ impl WorldStoreImpl {
         self.changes.push(diff.clone())
     }
 
+    // A convenience method for getting the world state from beginning of time.
+    pub fn world_state_from_beginning(&self) -> common::ServerWorldStateDiff {
+        self.world_state_from_version(&BEGINNING_OF_TIME_VERSION)
+    }
+
+    // Returns the world state diff, not including the provided version index.
+    //
     // This function returns the server world state diff, so the client wrapper should extract
     // just the diff.
     pub fn world_state_from_version(&self, version: &u64) -> common::ServerWorldStateDiff {
-        common::ServerWorldStateDiff::new()
+        let head_version = self.changes.len();
+
+        // We need to special-case the version of 0 so the index doesn't end up in negative.
+        let mut from_index: usize = 0;
+        if version > &BEGINNING_OF_TIME_VERSION {
+            // HACK(aeidelson): This is definitely going to cause problems eventually and crash.
+            from_index = (version - 1) as usize;
+        }
+
+        let world_state_diff = combine_changes(&self.changes[from_index..]);
+
+        let mut server_diff = common::ServerWorldStateDiff::new();
+        server_diff.set_new_version(head_version as u64);
+        server_diff.set_changes(world_state_diff);
+
+        server_diff
     }
 
 }
