@@ -20,7 +20,7 @@ fn main() {
         desired_calculate_updates_frequency_hz: 5,
     });
 
-    let server = server::new(server::ServerConfig {
+    let mut server = server::new(server::ServerConfig {
         calculate_updates: calculate_updates_handler,
         desired_calculate_updates_frequency_hz: 5,
     });

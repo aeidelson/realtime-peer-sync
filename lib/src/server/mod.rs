@@ -1,11 +1,12 @@
+mod lifeline_ping_async_task;
+
 use std::time;
 use std::io;
-use std::thread;
 use std::sync::{Arc, RwLock};
 
 use ::world_store::ServerWorldStore;
 
-use ::utils;
+use utils::thread;
 
 use ::common::{
     WorldState,
@@ -29,9 +30,10 @@ pub struct ServerConfig {
 }
 
 pub fn new(config: ServerConfig) -> Server {
-    // TODO: Confirm only one client created.
+    // TODO: Confirm only one server created.
     return Server{
         store_lock: Arc::new(RwLock::new(ServerWorldStore::new())),
+        running_cancelable_threads: vec![],
     };
 }
 
@@ -39,17 +41,28 @@ pub struct Server {
     // Contains the current state of the world.
     // This is considered to be the authoritative representation of the world.
     store_lock: Arc<RwLock<ServerWorldStore>>,
+
+    running_cancelable_threads: Vec<thread::CancelSender>,
 }
 
 impl Server {
     // Starts asynchronously accepting incoming requests and broadcasting updates to connected clients.
     // This function is non-blocking.
-    pub fn start(&self) -> io::Result<()> {
+    pub fn start(&mut self) -> io::Result<()> {
+        self.running_cancelable_threads.push(lifeline_ping_async_task::start(
+            // TODO(aeidelson): These values should be (optionally?) provided in the config.
+            &8888u32, // udp broadcast port.
+            "My server", // server name.
+            &0000u32, // Server tcp port
+        ));
         Ok(())
     }
 
     // Shuts down and cleans up the server.
     pub fn shutdown(self) -> io::Result<()> {
+        for cancelable_sender in self.running_cancelable_threads {
+            cancelable_sender.cancel_thread();
+        }
         Ok(())
     }
 }

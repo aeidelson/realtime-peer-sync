@@ -1,4 +1,5 @@
 extern crate protobuf;
+extern crate uuid;
 
 // Code to set up a client.
 pub mod client;

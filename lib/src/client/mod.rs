@@ -3,6 +3,8 @@ use std::io;
 use std::sync::{Arc, RwLock};
 use std::collections::HashMap;
 
+use uuid::Uuid;
+
 use ::common::{
     WorldState,
     UserEvent,
@@ -39,6 +41,7 @@ pub fn new(config: ClientConfig) -> Client {
     // TODO: Confirm only one client created.
     return Client{
         calculated_store_lock: Arc::new(RwLock::new(ClientWorldStore::new())),
+        client_id: Uuid::new_v4().to_string(),
     };
 }
 
@@ -47,6 +50,8 @@ pub struct Client {
     // povided by the server, like local server calculations. This is what is queried when
     // `get_world_state()` is called.
     calculated_store_lock: Arc<RwLock<ClientWorldStore>>,
+
+    client_id: String,
 }
 
 impl Client {
@@ -85,16 +90,11 @@ impl Client {
     }
 
     pub fn new_user_events(&self, user_events: Vec<UserEvent>) {
-
-        // Convert the events to an internal representation.
-        // TODO
-        let client_id = String::from("fake_client_id");
-
         let internal_events: Vec<internal_common::Event> = user_events.iter().map(
             |event| converters::public_to_internal::convert_event(
                 event,
-                &String::from("fake_event_id"),
-                &client_id,
+                &Uuid::new_v4().to_string(),
+                &self.client_id,
             )
         ).collect();
 
