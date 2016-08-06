@@ -56,6 +56,7 @@ pub struct EventObjectUpdate {
     // Should the object be deleted? If set, the following fields are ignored.
     pub delete: Option<bool>,
 
+    // TODO(aeidelson): This would be a lot easier to use as a map.
     pub fields_to_upsert: Vec<Field>,
     pub fields_to_remove: Vec<FieldKey>,
 }

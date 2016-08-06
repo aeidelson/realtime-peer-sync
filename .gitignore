@@ -2,3 +2,4 @@
 Cargo.lock
 /lib/include/*
 .DS_Store
+.vscode

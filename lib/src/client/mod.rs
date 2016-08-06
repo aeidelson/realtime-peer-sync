@@ -9,7 +9,12 @@ use ::common::{
     CalculationEvent,
 };
 
+use internal_protocol::gen::common as internal_common;
+
+
 use ::world_store::ClientWorldStore;
+
+use utils::converters;
 
 pub struct DiscoveredServerInfo {
 }
@@ -60,9 +65,11 @@ impl Client {
     // Returns a copy of the current (local) state of the world.
     // TODO(aeidelson): If a copy is too slow, we can explore using a R/W lock or something clever.
     pub fn get_world_state(&self) -> WorldState {
-        return WorldState{
-            objects: HashMap::new(),
-        }
+        let calculated_store = self.calculated_store_lock.read().unwrap();
+
+        return converters::internal_to_public::convert_world_state(
+            &calculated_store.current_world_state(),
+        )
     }
 
     
@@ -78,6 +85,28 @@ impl Client {
     }
 
     pub fn new_user_events(&self, user_events: Vec<UserEvent>) {
+
+        // Convert the events to an internal representation.
+        // TODO
+        let client_id = String::from("fake_client_id");
+
+        let internal_events: Vec<internal_common::Event> = user_events.iter().map(
+            |event| converters::public_to_internal::convert_event(
+                event,
+                &String::from("fake_event_id"),
+                &client_id,
+            )
+        ).collect();
+
+        // Apply the changes locally.
+        let mut calculated_store = self.calculated_store_lock.write().unwrap();
+        for internal_event in internal_events {
+            calculated_store.update_world_state(
+                internal_event.get_changes(),
+            );
+        }
+
+        // TODO: Send the events to the actual server.
     }
 
     // Shuts down and cleans up the client.

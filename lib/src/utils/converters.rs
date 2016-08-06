@@ -2,7 +2,7 @@
 
 // Converters to go from the internal (protobuf) API to the public (rusty) API.
 
-mod internal_to_public {
+pub mod internal_to_public {
     use common as public_common;
     use internal_protocol::gen::common as internal_common;
     use std::collections::HashMap;
@@ -49,7 +49,7 @@ mod internal_to_public {
 
 // Converters to go from the public (rusty) API to the internal (protobuf) API.
 
-mod public_to_internal {
+pub mod public_to_internal {
     use protobuf::RepeatedField;
 
     use common as public_common;
