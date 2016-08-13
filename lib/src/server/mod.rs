@@ -1,4 +1,5 @@
 mod lifeline_ping_async_task;
+mod tcp_responder_async_task;
 
 use std::time;
 use std::io;
@@ -49,11 +50,21 @@ impl Server {
     // Starts asynchronously accepting incoming requests and broadcasting updates to connected clients.
     // This function is non-blocking.
     pub fn start(&mut self) -> io::Result<()> {
+
+        // Start listening for tcp requests.
+        let (cancel_sender, server_tcp_port) = tcp_responder_async_task::start();
+        self.running_cancelable_threads.push(cancel_sender);
+
+        println!("Server tcp port: {:?}", server_tcp_port);
+
+        // TODO(aeidelson): Start sending updates to connected clients
+ 
+        // Start broadcasting server to clients in same network.
         self.running_cancelable_threads.push(lifeline_ping_async_task::start(
             // TODO(aeidelson): These values should be (optionally?) provided in the config.
             &8888u32, // udp broadcast port.
             "My server", // server name.
-            &0000u32, // Server tcp port
+            &server_tcp_port, // Server tcp port
         ));
         Ok(())
     }

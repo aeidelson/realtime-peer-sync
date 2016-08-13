@@ -51,10 +51,7 @@ pub fn start(
         let broadcast_message_bytes: &[u8] = broadcast_message_byte_vector.as_slice();
 
         // Broadcast the message on a loop.
-        loop {
-            if cancel_receiver.has_been_canceled() {
-                break;
-            }
+        while !cancel_receiver.has_been_canceled() {
             println!("broadcasting!!");
             socket.send_to(&broadcast_message_bytes, broadcast_addr).unwrap();
             std_thread::sleep(Duration::from_millis(500));

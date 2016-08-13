@@ -1,3 +1,5 @@
+mod server_discovery_sync_task;
+
 use std::time;
 use std::io;
 use std::sync::{Arc, RwLock};
@@ -59,6 +61,7 @@ impl Client {
     // A blocking function that listens for servers for `discovery_time`, before reporting the
     // results.
     pub fn find_servers(&self, discovery_time: time::Duration) -> io::Result<Vec<DiscoveredServerInfo>> {
+        let _ = server_discovery_sync_task::start(&8888u32, time::Duration::from_secs(1));
         Ok(Vec::new())
     }
 
