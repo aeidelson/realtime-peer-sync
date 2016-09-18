@@ -35,7 +35,6 @@ pub fn start(
         // Build the address we want to broadcast to.
         let broadcast_addr = SocketAddr::new(
             IpAddr::from_str("255.255.255.255").unwrap(),
-            //IpAddr::from_str("127.0.0.1").unwrap(),
             udp_broadcast_port,
         );
 

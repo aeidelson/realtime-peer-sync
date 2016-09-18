@@ -1,5 +1,6 @@
 mod server_discovery_sync_task;
 
+use std::net;
 use std::time;
 use std::io;
 use std::sync::{Arc, RwLock};
@@ -21,6 +22,8 @@ use ::world_store::ClientWorldStore;
 use utils::converters;
 
 pub struct DiscoveredServerInfo {
+    pub server_name: String,
+    pub tcp_server_location: net::SocketAddr,
 }
 
 // Used to keep track of running user interactions.
@@ -61,8 +64,7 @@ impl Client {
     // A blocking function that listens for servers for `discovery_time`, before reporting the
     // results.
     pub fn find_servers(&self, discovery_time: time::Duration) -> io::Result<Vec<DiscoveredServerInfo>> {
-        let _ = server_discovery_sync_task::start(&8888u32, time::Duration::from_secs(1));
-        Ok(Vec::new())
+        Ok(server_discovery_sync_task::start(&8888u32, discovery_time))
     }
 
     // Connect to the specified server.

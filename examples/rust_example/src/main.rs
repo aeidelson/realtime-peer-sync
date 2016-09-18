@@ -27,6 +27,13 @@ fn main() {
 
     server.start().unwrap();
 
+
+    let discovered = client.find_servers(time::Duration::from_secs(10)).unwrap();
+    for discovered_server in discovered {
+        println!("{} {}", discovered_server.server_name, discovered_server.tcp_server_location)
+    }
+
+    /*
     // Start piston to draw and handle user input.
     let mut window: PistonWindow = WindowSettings::new("Hello Piston!", [640, 480])
         .exit_on_esc(true)
@@ -104,6 +111,7 @@ fn main() {
         }
     }
 
+*/
     server.shutdown();
     client.shutdown();
 }
