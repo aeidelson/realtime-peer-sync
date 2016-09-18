@@ -1,7 +1,4 @@
 syntax = "proto3";
 
-message DisconnectRequest {
-}
-
-message DisconnectResponse {
+message ClientServerDisconnect {
 }

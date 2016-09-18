@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+import "common.proto";
+import "connect.proto";
+import "disconnect.proto";
+import "ack_updates.proto";
+import "request_updates.proto";
+import "send_new_events.proto";
+import "world_update.proto";
+
+// Contains a request between the client and the server.
+message ClientServerMessage {
+  // All information the server needs to know about the client. Required.
+  ClientInfo client_info = 1;
+
+  // Contains the session token. Required on all requests other than 'connect',
+  // which is when it's returned to the client.
+  string session_token = 2;
+
+  // The payload of the message.
+  oneof payload {
+    ClientServerConnect connect = 3;
+    ClientServerDisconnect disconnect = 4;
+    ClientServerAckUpdates ack_updates = 5;
+    ClientServerRequestUpdates request_updates = 6;
+    ClientServerSendNewEvents send_new_events = 7;
+  }
+}
+
+// Sent between the server ad authenticated/connected clients.
+// Can be sent either over udp or tcp, depending on how critical it is.
+message ServerClientMessage {
+  // All information a connected client needs to know about the server.
+  ServerInfo server_info = 1;
+
+  oneof payload {
+    // Sent to the client over tcp, includes the initial state of the world.
+    ServerClientConnectBootstrap connect_bootstrap = 2;
+
+    // Sent to the client over udp to notify the client of changes.
+    ServerClientWorldUpdate world_update = 3;
+  }
+}
+
+

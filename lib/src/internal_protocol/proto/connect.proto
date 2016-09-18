@@ -2,12 +2,10 @@ syntax = "proto3";
 
 import "common.proto";
 
-message ConnectRequest {
+message ClientServerConnect {
 }
 
-message ConnectResponse {
-  ServerInfo server_info = 1;
-
+message ServerClientConnectBootstrap {
   // Represents a squashed diff from the start of the world until now.
   ServerWorldStateDiff initial_world_state = 2;
 }

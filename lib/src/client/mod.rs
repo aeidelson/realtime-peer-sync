@@ -15,6 +15,7 @@ use ::common::{
 };
 
 use internal_protocol::gen::common as internal_common;
+use internal_protocol::gen::message_wrapper;
 
 
 use ::world_store::ClientWorldStore;
@@ -44,9 +45,10 @@ pub struct ClientConfig {
 
 pub fn new(config: ClientConfig) -> Client {
     // TODO: Confirm only one client created.
-    return Client{
+    return Client {
         calculated_store_lock: Arc::new(RwLock::new(ClientWorldStore::new())),
         client_id: Uuid::new_v4().to_string(),
+        server_connection: None,
     };
 }
 
@@ -57,6 +59,8 @@ pub struct Client {
     calculated_store_lock: Arc<RwLock<ClientWorldStore>>,
 
     client_id: String,
+
+    server_connection: Option<net::TcpStream>,
 }
 
 impl Client {
@@ -112,6 +116,9 @@ impl Client {
         }
 
         // TODO: Send the events to the actual server.
+    }
+
+    fn make_server_request(request: &message_wrapper::ClientServerMessage) {
     }
 
     // Shuts down and cleans up the client.

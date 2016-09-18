@@ -2,7 +2,7 @@ syntax = "proto3";
 
 import "common.proto";
 
-message WorldUpdatePush {
+message ServerClientWorldUpdate {
   // Required. The version of the world that the server believes the client has. The client should
   // re-connect if this is greater than the actual client version (since something went horribly
   // wrong).

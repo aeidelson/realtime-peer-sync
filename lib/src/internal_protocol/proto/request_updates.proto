@@ -1,7 +1,4 @@
 syntax = "proto3";
 
-message RequestUpdatesRequest {
-}
-
-message RequestUpdatesResponse {
+message ClientServerRequestUpdates {
 }

@@ -3,7 +3,7 @@ syntax = "proto3";
 import "common.proto";
 
 // Notifies the server of new client-originated changes (events).
-message SendNewEventsRequest {
+message ClientServerSendNewEvents {
   // Required. The latest authoritative world verstion the client has received.
   // Can eventually be used to detect conflicts.
   uint64 client_world_version = 1;
@@ -13,5 +13,3 @@ message SendNewEventsRequest {
   repeated Event event = 2;
 }
 
-message SendNewEventsResponse {
-}
