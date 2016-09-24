@@ -34,11 +34,8 @@ message ServerClientMessage {
   ServerInfo server_info = 1;
 
   oneof payload {
-    // Sent to the client over tcp, includes the initial state of the world.
-    ServerClientConnectBootstrap connect_bootstrap = 2;
-
     // Sent to the client over udp to notify the client of changes.
-    ServerClientWorldUpdate world_update = 3;
+    ServerClientWorldUpdate world_update = 2;
   }
 }
 
