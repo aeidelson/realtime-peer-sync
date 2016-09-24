@@ -66,6 +66,7 @@ impl Server {
             "My server", // server name.
             &server_tcp_port, // Server tcp port
         ));
+
         Ok(())
     }
 

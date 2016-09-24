@@ -3,10 +3,12 @@ mod server_discovery_sync_task;
 use std::net;
 use std::time;
 use std::io;
+use std::io::Write;
 use std::sync::{Arc, RwLock};
 use std::collections::HashMap;
 
 use uuid::Uuid;
+use protobuf::Message;
 
 use ::common::{
     WorldState,
@@ -16,10 +18,10 @@ use ::common::{
 
 use internal_protocol::gen::common as internal_common;
 use internal_protocol::gen::message_wrapper;
-
-
+use internal_protocol::gen::message_wrapper::ClientServerMessage;
+use internal_protocol::gen::common::ClientInfo;
+//use internal_protocol::gen::connect::ClientServerConnect;
 use ::world_store::ClientWorldStore;
-
 use utils::converters;
 
 pub struct DiscoveredServerInfo {
@@ -72,7 +74,18 @@ impl Client {
     }
 
     // Connect to the specified server.
-    pub fn connect_to_server(&self, server: &DiscoveredServerInfo) -> io::Result<()> {
+    pub fn connect_to_server(&mut self, server: &DiscoveredServerInfo) -> io::Result<()> {
+        self.server_connection = Some(try!(net::TcpStream::connect(server.tcp_server_location)));
+
+        let mut message = ClientServerMessage::new();
+        {
+            message.set_client_info(self.create_client_info());
+        }
+        // We get the mut connect just to ensure it's set, even though it's empty.
+        let _ = message.mut_connect();
+
+        self.send_message_to_server(&message);
+
         Ok(())
     }
 
@@ -118,7 +131,23 @@ impl Client {
         // TODO: Send the events to the actual server.
     }
 
-    fn make_server_request(request: &message_wrapper::ClientServerMessage) {
+    fn send_message_to_server(&mut self, message: &message_wrapper::ClientServerMessage) {
+        let server_stream = self.server_connection.as_mut().unwrap();
+
+        // TODO: Return result and handle error.
+        let message_byte_vector  = message.write_to_bytes().unwrap();
+        let message_byte_slice: &[u8] = message_byte_vector.as_slice();
+
+        server_stream.write_all(message_byte_slice).unwrap();
+    }
+
+    fn create_client_info(&self) -> ClientInfo {
+        let mut client_info = ClientInfo::new();
+        {
+            let mut public_client_info = client_info.mut_public_info();
+            public_client_info.set_client_id(self.client_id.clone());
+        }
+        client_info
     }
 
     // Shuts down and cleans up the client.

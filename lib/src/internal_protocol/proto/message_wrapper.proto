@@ -13,17 +13,13 @@ message ClientServerMessage {
   // All information the server needs to know about the client. Required.
   ClientInfo client_info = 1;
 
-  // Contains the session token. Required on all requests other than 'connect',
-  // which is when it's returned to the client.
-  string session_token = 2;
-
   // The payload of the message.
   oneof payload {
-    ClientServerConnect connect = 3;
-    ClientServerDisconnect disconnect = 4;
-    ClientServerAckUpdates ack_updates = 5;
-    ClientServerRequestUpdates request_updates = 6;
-    ClientServerSendNewEvents send_new_events = 7;
+    ClientServerConnect connect = 2;
+    ClientServerDisconnect disconnect = 3;
+    ClientServerAckUpdates ack_updates = 4;
+    ClientServerRequestUpdates request_updates = 5;
+    ClientServerSendNewEvents send_new_events = 6;
   }
 }
 

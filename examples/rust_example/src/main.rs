@@ -15,7 +15,7 @@ use RPS::common::{WorldState, CalculationEvent};
 
 
 fn main() {
-    let client = client::new(client::ClientConfig {
+    let mut client = client::new(client::ClientConfig {
         calculate_updates: calculate_updates_handler,
         desired_calculate_updates_frequency_hz: 5,
     });
@@ -28,12 +28,19 @@ fn main() {
     server.start().unwrap();
 
 
-    let discovered = client.find_servers(time::Duration::from_secs(10)).unwrap();
-    for discovered_server in discovered {
-        println!("{} {}", discovered_server.server_name, discovered_server.tcp_server_location)
+    let discovered = client.find_servers(time::Duration::from_secs(3)).unwrap();
+    if discovered.len() == 0 {
+        panic!("No servers discovered")
     }
 
-    /*
+    let chosen_server = &discovered[0];
+    println!(
+        "Connecting to first discovered server: {} {}",
+         chosen_server.server_name,
+         chosen_server.tcp_server_location);
+
+    client.connect_to_server(&chosen_server);
+
     // Start piston to draw and handle user input.
     let mut window: PistonWindow = WindowSettings::new("Hello Piston!", [640, 480])
         .exit_on_esc(true)
@@ -111,7 +118,6 @@ fn main() {
         }
     }
 
-*/
     server.shutdown();
     client.shutdown();
 }
