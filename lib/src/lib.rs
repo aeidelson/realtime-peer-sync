@@ -1,5 +1,7 @@
 extern crate protobuf;
 extern crate uuid;
+extern crate rustc_serialize;
+extern crate bincode;
 
 // Code to set up a client.
 pub mod client;
@@ -14,3 +16,4 @@ pub mod common;
 mod world_store;
 mod utils;
 mod internal_protocol;
+mod protocol;

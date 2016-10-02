@@ -24,6 +24,10 @@ use internal_protocol::gen::common::ClientInfo;
 use ::world_store::ClientWorldStore;
 use utils::converters;
 
+// testing
+use protocol::common as protocol_common;
+use bincode;
+
 pub struct DiscoveredServerInfo {
     pub server_name: String,
     pub tcp_server_location: net::SocketAddr,
@@ -46,6 +50,12 @@ pub struct ClientConfig {
 }
 
 pub fn new(config: ClientConfig) -> Client {
+    let t = protocol_common::PublicClientInfo{
+        client_id: String::from(""),
+        name: String::from(""),
+    };
+    let encoded = bincode::rustc_serialize::encode(&t, bincode::SizeLimit::Infinite).unwrap();
+
     // TODO: Confirm only one client created.
     return Client {
         calculated_store_lock: Arc::new(RwLock::new(ClientWorldStore::new())),

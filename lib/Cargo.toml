@@ -9,6 +9,8 @@ crate-type = ["staticlib", "rlib"]
 
 [dependencies]
 uuid = { version = "0.3.0", features = [ "v4" ] }
+rustc-serialize = "*"
+bincode = "*"
 
 [dependencies.protobuf]
 git = "https://github.com/stepancheg/rust-protobuf.git"
