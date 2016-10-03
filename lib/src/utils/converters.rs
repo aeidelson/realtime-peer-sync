@@ -14,7 +14,7 @@ pub mod internal_to_public {
             objects: HashMap::new(),
         };
 
-        for (object_id, object_diff) in &diff.object_change {
+        for (object_id, object_diff) in &diff.object_changes {
             let obj = convert_object(object_id, object_diff);
             let _ = world_state.objects.insert(object_id.clone(), obj);
         }
@@ -24,7 +24,7 @@ pub mod internal_to_public {
 
     fn convert_object(
         object_id: &String,
-        diff: &common::ObjectDiff,
+        change: &common::ObjectChange,
     ) -> consumer_api::Object {
         let mut new_obj = consumer_api::Object {
             object_id: object_id.clone(),
@@ -32,7 +32,7 @@ pub mod internal_to_public {
         };
 
         // If the object has fields, add them. We ignore any deleted fields.
-        if let &common::ObjectDiff::Upsert(ref upserted_fields, _) = diff {
+        if let &common::ObjectChange::FieldChange(ref upserted_fields, _) = change {
             new_obj.object_fields = upserted_fields.clone();
         }
 
@@ -54,32 +54,32 @@ pub mod public_to_internal {
         acting_client_id: &String,
     ) -> common::Event {
 
-        let mut object_change_map: HashMap<String, common::ObjectDiff> = HashMap::new();
+        let mut object_changes: HashMap<String, common::ObjectChange> = HashMap::new();
         for (object_id, event_object_update) in &public_event.object_updates {
-            object_change_map.insert(object_id.clone(), convert_object_change(event_object_update));
+            object_changes.insert(object_id.clone(), convert_object_change(event_object_update));
         }
 
         common::Event {
             event_id: event_id.clone(),
             acting_client_id: acting_client_id.clone(),
             changes: common::WorldStateDiff {
-                object_change: object_change_map,
+                object_changes: object_changes,
             },
         }
     }
 
     fn convert_object_change(
         public_object_update: &consumer_api::EventObjectUpdate,
-    ) -> common::ObjectDiff {
+    ) -> common::ObjectChange {
 
         // Check for the deleted flag being set.
         if public_object_update.delete == Some(true) {
-            return common::ObjectDiff::Delete
+            return common::ObjectChange::Delete
         }
 
         // If the deleted field isn't set, we want to populate the diff with the added/removed
         // fields.
-        common::ObjectDiff::Upsert(
+        common::ObjectChange::FieldChange(
             // Upserted fields.
             public_object_update.fields_to_upsert.clone(),
             

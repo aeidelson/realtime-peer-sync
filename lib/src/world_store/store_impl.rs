@@ -62,34 +62,34 @@ impl WorldStoreImpl {
 fn combine_changes(diffs: &[common::WorldStateDiff]) -> common::WorldStateDiff {
 
     // Keyed by object id.
-    let mut combined_object_diffs: HashMap<String, common::ObjectDiff> = HashMap::new();
+    let mut combined_object_changes: HashMap<String, common::ObjectChange> = HashMap::new();
 
     // Build the set of changes
     for diff in diffs {
-        for (object_id, object_diff) in &diff.object_change {
-            let mut new_object_diff = object_diff.clone();
+        for (object_id, object_change) in &diff.object_changes {
+            let mut new_object_change = object_change.clone();
 
-            if let Some(old_object_diff) = combined_object_diffs.get(object_id) {
-                new_object_diff = combine_object_diffs(old_object_diff, &new_object_diff);
+            if let Some(old_object_change) = combined_object_changes.get(object_id) {
+                new_object_change = combine_object_changes(old_object_change, &new_object_change);
             }
-            combined_object_diffs.insert(object_id.clone(), new_object_diff);
+            combined_object_changes.insert(object_id.clone(), new_object_change);
         }
     }
 
     // We we build a final world state based on the diffs we collected.
     common::WorldStateDiff {
-        object_change: combined_object_diffs,
+        object_changes: combined_object_changes,
     }
 }
 
 // Combines two diffs for the same object id.
 // Note that `first` is assumed to have occured earlier in time than `second`.
-fn combine_object_diffs(
-    first: &common::ObjectDiff,
-    second: &common::ObjectDiff,
-) -> common::ObjectDiff {
+fn combine_object_changes(
+    first: &common::ObjectChange,
+    second: &common::ObjectChange,
+) -> common::ObjectChange {
     // If either the first or second was deleted, we want to just retrun the final state.
-    if first == &common::ObjectDiff::Delete || second == &common::ObjectDiff::Delete {
+    if first == &common::ObjectChange::Delete || second == &common::ObjectChange::Delete {
         return second.clone();
     }
 
@@ -99,7 +99,7 @@ fn combine_object_diffs(
     let mut upsert_fields: HashMap<String, common::FieldValue> = HashMap::new();
     let mut delete_fields: HashSet<String> = HashSet::new();
 
-    if let &common::ObjectDiff::Upsert(ref actually_upserted_fields, ref actually_deleted_fields) = first {
+    if let &common::ObjectChange::FieldChange(ref actually_upserted_fields, ref actually_deleted_fields) = first {
         upsert_fields = actually_upserted_fields.clone();
         delete_fields = actually_deleted_fields.clone();
     }
@@ -110,7 +110,7 @@ fn combine_object_diffs(
     // 3. Look through added fields in `second`. For each:
     //  1. Check if in removed set. Remove from there if it is
     //  2. Set in added map. 
-    if let &common::ObjectDiff::Upsert(ref second_upserted_fields, ref second_deleted_fields) = first {
+    if let &common::ObjectChange::FieldChange(ref second_upserted_fields, ref second_deleted_fields) = second {
 
         for key in second_deleted_fields {
             delete_fields.insert(key.clone());
@@ -123,5 +123,5 @@ fn combine_object_diffs(
     }
  
     // Build the final object to return.
-    common::ObjectDiff::Upsert(upsert_fields, delete_fields)
+    common::ObjectChange::FieldChange(upsert_fields, delete_fields)
 }

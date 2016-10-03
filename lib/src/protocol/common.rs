@@ -44,9 +44,9 @@ pub enum FieldValue {
 // TODO(aeidelson): It's unclear how specific this API should be. Should re-evaluate this in the
 // future and see if it makes sense to be more restrictive (like seperating updates and adds).
 #[derive(RustcDecodable, RustcEncodable, Clone, PartialEq)]
-pub enum ObjectDiff {
+pub enum ObjectChange {
     // Used whenever the fields of an object are updated, including when the object is new.
-    Upsert(
+    FieldChange(
         // Fields to update/insert (key, value)
         HashMap<FieldName, FieldValue>,
         // Fields to delete (by key)
@@ -62,7 +62,7 @@ pub enum ObjectDiff {
 pub struct WorldStateDiff {
     // A map from object id to changes to that object.
     // If an object doesn't already exist, it will be considered a new object.
-    pub object_change: HashMap<ObjectId, ObjectDiff>,
+    pub object_changes: HashMap<ObjectId, ObjectChange>,
 }
 
 // Represents an authoritative view of a change in the world, from one world version to another.
