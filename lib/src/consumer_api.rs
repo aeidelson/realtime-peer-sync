@@ -1,30 +1,26 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
-// Note: This is intentionally pretty flat / basic, to make it easer when we support C
-// bindings.
-
-pub type FieldKey = String;
-pub type FieldValue = Vec<u8>;
+// For convenience, we re-export some core types from our internal API:
+pub use protocol::common::{
+    ObjectId,
+    FieldName,
+    FieldValue
+};
 
 // Represents a single field in an object.
 pub struct Field {
-    pub key: FieldKey,
+    pub key: FieldName,
 
     // Note that the value will be opaque to the system.
     pub value: FieldValue,
 }
-
-// An random UUIDv4, to be provided by the client.
-pub type ObjectId = String;
 
 // Represents a single object in the "world".
 pub struct Object {
     pub object_id: ObjectId,
 
     // Fields stored in the object.
-    // Note: The system dedupes based on key, so there theoretically shouldn't be any
-    // duplicates.
-    pub object_fields: Vec<Field>,
+    pub object_fields: HashMap<FieldName, FieldValue>,
 }
 
 // Represents the state of the world.
@@ -56,9 +52,8 @@ pub struct EventObjectUpdate {
     // Should the object be deleted? If set, the following fields are ignored.
     pub delete: Option<bool>,
 
-    // TODO(aeidelson): This would be a lot easier to use as a map.
-    pub fields_to_upsert: Vec<Field>,
-    pub fields_to_remove: Vec<FieldKey>,
+    pub fields_to_upsert: HashMap<FieldName, FieldValue>,
+    pub fields_to_remove: HashSet<FieldName>,
 }
 
 // An event which is the result of a user action.

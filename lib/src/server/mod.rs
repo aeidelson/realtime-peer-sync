@@ -9,7 +9,7 @@ use ::world_store::ServerWorldStore;
 
 use utils::thread;
 
-use ::common::{
+use ::consumer_api::{
     WorldState,
     CalculationEvent,
 };

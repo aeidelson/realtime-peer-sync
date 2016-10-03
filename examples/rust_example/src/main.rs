@@ -4,14 +4,14 @@ extern crate uuid;
 
 use std::time;
 use std::thread;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use uuid::Uuid;
 
 use piston_window::{PistonWindow, WindowSettings, Event, MouseCursorEvent};
 
-use RPS::{client, common, server};
-use RPS::common::{WorldState, CalculationEvent};
+use RPS::{client, consumer_api, server};
+use RPS::consumer_api::{WorldState, CalculationEvent};
 
 
 fn main() {
@@ -51,25 +51,24 @@ fn main() {
         // TODO(aeidelson): I was having a lot of trouble gating this on clicks. It doesn't seem
         // like clicks and cursor locations are passed in the same event?
         if let Some(cursor_location) = e.mouse_cursor_args() {
-            let x_cursor_loc: [u8; 8] = unsafe { std::mem::transmute(cursor_location[0]) };
-            let y_cursor_loc: [u8; 8] = unsafe { std::mem::transmute(cursor_location[1]) };
 
             // Create an event to create a new object.
+            let mut upserted_fields = HashMap::new();
+            upserted_fields.insert(
+                String::from("x"),
+                consumer_api::FieldValue::Float64Value(cursor_location[0]));
+            upserted_fields.insert(
+                String::from("y"),
+                consumer_api::FieldValue::Float64Value(cursor_location[1]));
+
             let mut updates = HashMap::new();
             updates.insert(Uuid::new_v4().to_string(),
-                           common::EventObjectUpdate {
+                           consumer_api::EventObjectUpdate {
                                delete: None,
-                               fields_to_upsert: vec![common::Field {
-                                                          key: String::from("x"),
-                                                          value: x_cursor_loc.to_vec(),
-                                                      },
-                                                      common::Field {
-                                                          key: String::from("y"),
-                                                          value: y_cursor_loc.to_vec(),
-                                                      }],
-                               fields_to_remove: vec![],
+                               fields_to_upsert: upserted_fields,
+                               fields_to_remove: HashSet::new(),
                            });
-            client.new_user_events(vec![common::Event { object_updates: updates }]);
+            client.new_user_events(vec![consumer_api::Event { object_updates: updates }]);
         }
 
         if let Event::Render(_) = e {
@@ -86,25 +85,17 @@ fn main() {
 
                     // TODO(aeidelson): All of this is incredibly aweful and is just here to unblock
                     // working on network syncing. We need a better way to deal with field values.
-                    for field in &object.object_fields {
-                        match field.key.as_str() {
+                    for (k, v) in &object.object_fields {
+                        match k.as_str() {
                             "x" => {
-                                let mut ary = [0u8; 8];
-                                for i in 0..ary.len() {
-                                    if i < field.value.len() {
-                                        ary[i] = field.value[i];
-                                    }
+                                if let &consumer_api::FieldValue::Float64Value(xValue) = v {
+                                    x = xValue;
                                 }
-                                x = unsafe { std::mem::transmute(ary) }
                             }
                             "y" => {
-                                let mut ary = [0u8; 8];
-                                for i in 0..ary.len() {
-                                    if i < field.value.len() {
-                                        ary[i] = field.value[i];
-                                    }
+                                if let &consumer_api::FieldValue::Float64Value(yValue) = v {
+                                    y = yValue;
                                 }
-                                y = unsafe { std::mem::transmute(ary) }
                             }
                             _ => {}
                         }

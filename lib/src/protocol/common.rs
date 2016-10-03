@@ -1,6 +1,11 @@
 use std::vec::Vec;
 use std::collections::{HashMap, HashSet};
 
+// Aliases used throughout the protocol.
+pub type FieldName = String;
+// An random UUIDv4, to be provided by the client.
+pub type ObjectId = String;
+
 #[derive(RustcDecodable, RustcEncodable, Clone)]
 pub struct PublicClientInfo {
     // A random uuid.
@@ -43,9 +48,9 @@ pub enum ObjectDiff {
     // Used whenever the fields of an object are updated, including when the object is new.
     Upsert(
         // Fields to update/insert (key, value)
-        HashMap<String, FieldValue>,
+        HashMap<FieldName, FieldValue>,
         // Fields to delete (by key)
-        HashSet<String>),
+        HashSet<FieldName>),
 
     // Signals that the object is deleted.
     Delete,
@@ -57,7 +62,7 @@ pub enum ObjectDiff {
 pub struct WorldStateDiff {
     // A map from object id to changes to that object.
     // If an object doesn't already exist, it will be considered a new object.
-    pub object_change: HashMap<String, ObjectDiff>,
+    pub object_change: HashMap<ObjectId, ObjectDiff>,
 }
 
 // Represents an authoritative view of a change in the world, from one world version to another.

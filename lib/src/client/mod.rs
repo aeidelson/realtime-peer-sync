@@ -10,12 +10,12 @@ use std::collections::HashMap;
 use uuid::Uuid;
 use bincode;
 
-use ::common::{
+use ::consumer_api::{
     WorldState,
     UserEvent,
     CalculationEvent,
 };
-use protocol::common as internal_common;
+use protocol::common;
 use protocol::connect;
 use protocol::message_wrapper;
 use ::world_store::ClientWorldStore;
@@ -109,7 +109,7 @@ impl Client {
     }
 
     pub fn new_user_events(&self, user_events: Vec<UserEvent>) {
-        let internal_events: Vec<internal_common::Event> = user_events.iter().map(
+        let internal_events: Vec<common::Event> = user_events.iter().map(
             |event| converters::public_to_internal::convert_event(
                 event,
                 &Uuid::new_v4().to_string(),
@@ -139,9 +139,9 @@ impl Client {
         server_stream.write_all(message_byte_slice).unwrap();
     }
 
-    fn create_client_info(&self) -> internal_common::ClientInfo {
-        internal_common::ClientInfo {
-            public_info: internal_common::PublicClientInfo {
+    fn create_client_info(&self) -> common::ClientInfo {
+        common::ClientInfo {
+            public_info: common::PublicClientInfo {
                 name: String::from("client_name"),
                 client_id: self.client_id.clone(),
             },
