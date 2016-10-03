@@ -9,7 +9,7 @@
 
 mod store_impl;
 
-use ::internal_protocol::gen::common;
+use protocol::common;
 
 
 // A thin wrapper around the actual store, containing client-specific code.
@@ -39,7 +39,7 @@ impl ClientWorldStore {
 
     // Returns the state of the world, after every diff has been applied to it (in order).
     pub fn current_world_state(&self) -> common::WorldStateDiff {
-        self.world_store_impl.world_state_from_beginning().take_changes()
+        self.world_store_impl.world_state_from_beginning().changes
     }
 }
 

@@ -4,24 +4,24 @@ use std::net::{SocketAddr, UdpSocket, IpAddr};
 use std::thread as std_thread;
 use std::str::FromStr;
 
-use protobuf::Message;
+use bincode;
 
 use utils::thread;
-use internal_protocol::gen::common::PublicServerInfo;
-use internal_protocol::gen::server_lifeline_ping::ServerLifelinePing;
+use protocol::common::PublicServerInfo;
+use protocol::server_lifeline_ping::ServerLifelinePing;
 
 // Starts broadcasting the server availability.
 pub fn start(
     // The udp port to broadcast to.
-    borrowed_udp_broadcast_port: &u32,
+    borrowed_udp_broadcast_port: &u16,
 
     // The name of the server.
     borrowed_server_name: &str,
 
     // The tcp port the server is listening on for client requests.
-    borrowed_server_tcp_port: &u32,
+    borrowed_server_tcp_port: &u16,
 ) -> thread::CancelSender {
-    let udp_broadcast_port: u16 = borrowed_udp_broadcast_port.clone() as u16;
+    let udp_broadcast_port: u16 = borrowed_udp_broadcast_port.clone();
     let server_name: String = borrowed_server_name.to_string();
     let server_tcp_port = borrowed_server_tcp_port.clone();
 
@@ -39,14 +39,15 @@ pub fn start(
         );
 
         // Build the message to broadcast.
-        let mut broadcast_message = ServerLifelinePing::new();
-        {
-            let public_server_info = broadcast_message.mut_public_info();
-            public_server_info.set_name(server_name);
-            public_server_info.set_tcp_port(server_tcp_port);
-        }
+        let broadcast_message = ServerLifelinePing {
+            public_info: PublicServerInfo {
+                tcp_port: server_tcp_port,
+                name: server_name,
+            },
+        };
 
-        let broadcast_message_byte_vector  = broadcast_message.write_to_bytes().unwrap();
+        let broadcast_message_byte_vector =
+            bincode::rustc_serialize::encode(&broadcast_message, bincode::SizeLimit::Infinite).unwrap();
         let broadcast_message_bytes: &[u8] = broadcast_message_byte_vector.as_slice();
 
         // Broadcast the message on a loop.

@@ -5,9 +5,9 @@ use utils::thread;
 
 // Starts a thread to listen for and handle tcp requests.  In addition to the cancel sender, the
 // function returns server's tcp port (to broadcast to clients).
-pub fn start() -> (thread::CancelSender, u32) {
+pub fn start() -> (thread::CancelSender, u16) {
     let tcp_listener = net::TcpListener::bind("0.0.0.0:0").unwrap();
-    let server_tcp_port = tcp_listener.local_addr().unwrap().port() as u32;
+    let server_tcp_port = tcp_listener.local_addr().unwrap().port();
 
     let cancel_sender = thread::spawn_cancelable(move |cancel_receiver: thread::CancelReceiver| {
         while !cancel_receiver.has_been_canceled() {

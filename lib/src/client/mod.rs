@@ -8,25 +8,18 @@ use std::sync::{Arc, RwLock};
 use std::collections::HashMap;
 
 use uuid::Uuid;
-use protobuf::Message;
+use bincode;
 
 use ::common::{
     WorldState,
     UserEvent,
     CalculationEvent,
 };
-
-use internal_protocol::gen::common as internal_common;
-use internal_protocol::gen::message_wrapper;
-use internal_protocol::gen::message_wrapper::ClientServerMessage;
-use internal_protocol::gen::common::ClientInfo;
-//use internal_protocol::gen::connect::ClientServerConnect;
+use protocol::common as internal_common;
+use protocol::connect;
+use protocol::message_wrapper;
 use ::world_store::ClientWorldStore;
 use utils::converters;
-
-// testing
-use protocol::common as protocol_common;
-use bincode;
 
 pub struct DiscoveredServerInfo {
     pub server_name: String,
@@ -50,12 +43,6 @@ pub struct ClientConfig {
 }
 
 pub fn new(config: ClientConfig) -> Client {
-    let t = protocol_common::PublicClientInfo{
-        client_id: String::from(""),
-        name: String::from(""),
-    };
-    let encoded = bincode::rustc_serialize::encode(&t, bincode::SizeLimit::Infinite).unwrap();
-
     // TODO: Confirm only one client created.
     return Client {
         calculated_store_lock: Arc::new(RwLock::new(ClientWorldStore::new())),
@@ -80,21 +67,21 @@ impl Client {
     // A blocking function that listens for servers for `discovery_time`, before reporting the
     // results.
     pub fn find_servers(&self, discovery_time: time::Duration) -> io::Result<Vec<DiscoveredServerInfo>> {
-        Ok(server_discovery_sync_task::start(&8888u32, discovery_time))
+        Ok(server_discovery_sync_task::start(&8888u16, discovery_time))
     }
 
     // Connect to the specified server.
     pub fn connect_to_server(&mut self, server: &DiscoveredServerInfo) -> io::Result<()> {
         self.server_connection = Some(try!(net::TcpStream::connect(server.tcp_server_location)));
 
-        let mut message = ClientServerMessage::new();
-        {
-            message.set_client_info(self.create_client_info());
-        }
-        // We get the mut connect just to ensure it's set, even though it's empty.
-        let _ = message.mut_connect();
+        let client_info = self.create_client_info();
 
-        self.send_message_to_server(&message);
+        self.send_message_to_server(&message_wrapper::ClientServerMessage {
+            client_info: client_info,
+            payload: message_wrapper::ClientServerMessagePayload::Connect(
+                connect::ClientServerConnect { } 
+            ),
+        });
 
         Ok(())
     }
@@ -134,7 +121,7 @@ impl Client {
         let mut calculated_store = self.calculated_store_lock.write().unwrap();
         for internal_event in internal_events {
             calculated_store.update_world_state(
-                internal_event.get_changes(),
+                &internal_event.changes,
             );
         }
 
@@ -145,19 +132,20 @@ impl Client {
         let server_stream = self.server_connection.as_mut().unwrap();
 
         // TODO: Return result and handle error.
-        let message_byte_vector  = message.write_to_bytes().unwrap();
+        let message_byte_vector =
+            bincode::rustc_serialize::encode(message, bincode::SizeLimit::Infinite).unwrap();
         let message_byte_slice: &[u8] = message_byte_vector.as_slice();
 
         server_stream.write_all(message_byte_slice).unwrap();
     }
 
-    fn create_client_info(&self) -> ClientInfo {
-        let mut client_info = ClientInfo::new();
-        {
-            let mut public_client_info = client_info.mut_public_info();
-            public_client_info.set_client_id(self.client_id.clone());
+    fn create_client_info(&self) -> internal_common::ClientInfo {
+        internal_common::ClientInfo {
+            public_info: internal_common::PublicClientInfo {
+                name: String::from("client_name"),
+                client_id: self.client_id.clone(),
+            },
         }
-        client_info
     }
 
     // Shuts down and cleans up the client.

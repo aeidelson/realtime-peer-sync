@@ -1,4 +1,4 @@
 
-#[derive(RustcDecodable, RustcEncodable)]
+#[derive(RustcDecodable, RustcEncodable, Clone)]
 pub struct ClientServerDisconnect {
 }

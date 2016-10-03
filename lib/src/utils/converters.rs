@@ -4,7 +4,7 @@
 
 pub mod internal_to_public {
     use common as public_common;
-    use internal_protocol::gen::common as internal_common;
+    use protocol::common as internal_common;
     use std::collections::HashMap;
 
     pub fn convert_world_state(
@@ -14,10 +14,9 @@ pub mod internal_to_public {
             objects: HashMap::new(),
         };
 
-        for change_entity in diff.get_object_change() {
-            let object_id = String::from(change_entity.get_key());
-            let obj = convert_object(&object_id, change_entity.get_value());
-            let _ = world_state.objects.insert(object_id, obj);
+        for (object_id, object_diff) in &diff.object_change {
+            let obj = convert_object(object_id, object_diff);
+            let _ = world_state.objects.insert(object_id.clone(), obj);
         }
 
         world_state
@@ -33,11 +32,12 @@ pub mod internal_to_public {
         };
 
         // If the object has fields, add them. We ignore any deleted fields.
-        if diff.has_upserted_object() {
-            for field_entry in diff.get_upserted_object().get_field_to_upsert() {
+        if let &internal_common::ObjectDiff::Upsert(ref upserted_fields, _) = diff {
+            for (field_name, field_value) in upserted_fields {
                 new_obj.object_fields.push(public_common::Field {
-                    key: String::from(field_entry.get_key()),
-                    value: field_entry.get_value().to_vec(),
+                    key: field_name.clone(),
+                    // TODO: USE ACTUAL VALUE
+                    value: vec![],
                 })
             }
         }
@@ -50,70 +50,52 @@ pub mod internal_to_public {
 // Converters to go from the public (rusty) API to the internal (protobuf) API.
 
 pub mod public_to_internal {
-    use protobuf::RepeatedField;
-
     use common as public_common;
-    use internal_protocol::gen::common as internal_common;
+    use protocol::common as internal_common;
+    use std::collections::HashMap;
 
     pub fn convert_event(
         public_event: &public_common::Event,
         event_id: &String,
         acting_client_id: &String,
     ) -> internal_common::Event {
-        let mut internal_event = internal_common::Event::new();
-        internal_event.set_event_id(event_id.clone());
-        internal_event.set_acting_client_id(acting_client_id.clone());
 
-        {
-            let mut changes = internal_event.mut_changes();
-            let mut object_changes = changes.mut_object_change();
-            for (object_id, event_object_update) in &public_event.object_updates {
-                let mut entry = internal_common::WorldStateDiff_ObjectChangeEntry::new();
-                entry.set_key(object_id.clone());
-                entry.set_value(convert_object_change(event_object_update));
-                object_changes.push(entry);
-            }
+        let mut object_change_map: HashMap<String, internal_common::ObjectDiff> = HashMap::new();
+        for (object_id, event_object_update) in &public_event.object_updates {
+            object_change_map.insert(object_id.clone(), convert_object_change(event_object_update));
         }
 
-        internal_event
+        internal_common::Event {
+            event_id: event_id.clone(),
+            acting_client_id: acting_client_id.clone(),
+            changes: internal_common::WorldStateDiff {
+                object_change: object_change_map,
+            },
+        }
     }
 
     fn convert_object_change(
         public_object_update: &public_common::EventObjectUpdate,
     ) -> internal_common::ObjectDiff {
 
-        let mut object_diff = internal_common::ObjectDiff::new();
-
         // Check for the deleted flag being set.
         if public_object_update.delete == Some(true) {
-            // Will cause the deleted field to be populated.
-            let _ = object_diff.mut_deleted_object();
-            return object_diff;
+            return internal_common::ObjectDiff::Delete
         }
 
         // If the deleted field isn't set, we want to populate the diff with the added/removed
         // fields.
-        {
-            let mut object_modification = object_diff.mut_upserted_object();
-            let upserted_fields: Vec<internal_common::ObjectDiff_UpsertObjectModification_FieldToUpsertEntry> =
-                public_object_update.fields_to_upsert.iter().map(|field| {
-                    let mut entry = internal_common::ObjectDiff_UpsertObjectModification_FieldToUpsertEntry::new();
-                    entry.set_key(field.key.clone());
-                    entry.set_value(field.value.clone());
-
-                    entry
-                }).collect();
-            object_modification.set_field_to_upsert(RepeatedField::from_vec(upserted_fields));
-
-            let removed_fields: Vec<String> =
-                public_object_update.fields_to_remove.iter().map(|field_name| {
-                    field_name.clone()
-                }).collect();
-            object_modification.set_field_to_delete(RepeatedField::from_vec(removed_fields));
-        }
-
-
-        object_diff
+        internal_common::ObjectDiff::Upsert(
+            // Upserted fields.
+            public_object_update.fields_to_upsert.iter().map(|field| {
+                // TODO: Use real value
+                (field.key.clone(), internal_common::FieldValue::StringValue(String::from("FIX ME!")))
+            }).collect(),
+            
+            // Fields to delete.
+            public_object_update.fields_to_remove.iter().map(|field_name| {
+                field_name.clone()
+            }).collect())
     }
 }
 

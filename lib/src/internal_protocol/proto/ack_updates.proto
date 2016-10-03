@@ -1,7 +1,0 @@
-syntax = "proto3";
-
-// Is used by the client to ack an authorative update from the server. Should be called immediately
-// after receiving a ServerWorldStateDiff.
-message ClientServerAckUpdates {
-  uint64 world_version = 1;
-}

@@ -5,8 +5,7 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
 
-
-use ::internal_protocol::gen::common;
+use protocol::common;
 
 // This struct has most of the shared logic used by both the client and server world states.
 pub struct WorldStoreImpl {
@@ -50,11 +49,10 @@ impl WorldStoreImpl {
 
         let world_state_diff = combine_changes(&self.changes[from_index..]);
 
-        let mut server_diff = common::ServerWorldStateDiff::new();
-        server_diff.set_new_version(head_version as u64);
-        server_diff.set_changes(world_state_diff);
-
-        server_diff
+        common::ServerWorldStateDiff {
+            new_version: head_version as u64,
+            changes: world_state_diff,
+        }
     }
 
 }
@@ -68,28 +66,20 @@ fn combine_changes(diffs: &[common::WorldStateDiff]) -> common::WorldStateDiff {
 
     // Build the set of changes
     for diff in diffs {
-        for object_change in diff.get_object_change() {
-            let object_id = String::from(object_change.get_key());
-            let mut new_object_diff = object_change.get_value().clone();
-            if let Some(old_object_diff) = combined_object_diffs.get(&object_id) {
+        for (object_id, object_diff) in &diff.object_change {
+            let mut new_object_diff = object_diff.clone();
+
+            if let Some(old_object_diff) = combined_object_diffs.get(object_id) {
                 new_object_diff = combine_object_diffs(old_object_diff, &new_object_diff);
             }
-            combined_object_diffs.insert(object_id, new_object_diff);
+            combined_object_diffs.insert(object_id.clone(), new_object_diff);
         }
     }
 
     // We we build a final world state based on the diffs we collected.
-    let mut new_diff = common::WorldStateDiff::new();
-    {
-        let mut object_changes = new_diff.mut_object_change();
-        for (object_id, object_diff) in combined_object_diffs {
-            let mut entry = common::WorldStateDiff_ObjectChangeEntry::new();
-            entry.set_key(object_id);
-            entry.set_value(object_diff);
-            object_changes.push(entry);
-        }
+    common::WorldStateDiff {
+        object_change: combined_object_diffs,
     }
-    new_diff
 }
 
 // Combines two diffs for the same object id.
@@ -99,26 +89,19 @@ fn combine_object_diffs(
     second: &common::ObjectDiff,
 ) -> common::ObjectDiff {
     // If either the first or second was deleted, we want to just retrun the final state.
-    if first.has_deleted_object() || second.has_deleted_object() {
+    if first == &common::ObjectDiff::Delete || second == &common::ObjectDiff::Delete {
         return second.clone();
     }
 
     // Otherwise we need to figure out what changed and how to combine the diffs.
 
     // 1. Populate initially removed and added fields (from `first`)
-    let mut upsert_fields: HashMap<String, &[u8]> = HashMap::new();
-    let mut deleted_field_keys: HashSet<String> = HashSet::new();
+    let mut upsert_fields: HashMap<String, common::FieldValue> = HashMap::new();
+    let mut delete_fields: HashSet<String> = HashSet::new();
 
-    if first.has_upserted_object() {
-        let upserted = first.get_upserted_object();
-
-        for field_key in upserted.get_field_to_delete() {
-            deleted_field_keys.insert(field_key.clone());
-        }
-
-        for field in upserted.get_field_to_upsert() {
-            upsert_fields.insert(String::from(field.get_key()), field.get_value());
-        }
+    if let &common::ObjectDiff::Upsert(ref actually_upserted_fields, ref actually_deleted_fields) = first {
+        upsert_fields = actually_upserted_fields.clone();
+        delete_fields = actually_deleted_fields.clone();
     }
 
     // 2. Look through removed fields in `second`. For each:
@@ -127,42 +110,18 @@ fn combine_object_diffs(
     // 3. Look through added fields in `second`. For each:
     //  1. Check if in removed set. Remove from there if it is
     //  2. Set in added map. 
-    if second.has_upserted_object() {
-        let upserted = second.get_upserted_object();
+    if let &common::ObjectDiff::Upsert(ref second_upserted_fields, ref second_deleted_fields) = first {
 
-        for field_key in upserted.get_field_to_delete() {
-            deleted_field_keys.insert(field_key.clone());
-            // In case the field was added in `first`, remove it.
-            let _ = upsert_fields.remove(field_key);
+        for key in second_deleted_fields {
+            delete_fields.insert(key.clone());
+            let _ = upsert_fields.remove(key);
         }
 
-        for field in upserted.get_field_to_upsert() {
-            upsert_fields.insert(String::from(field.get_key()), field.get_value());
+        for (k, v) in second_upserted_fields {
+            upsert_fields.insert(k.clone(), v.clone());
         }
     }
  
     // Build the final object to return.
-    let mut new_diff = common::ObjectDiff::new();
-    let mut new_upserted = new_diff.take_upserted_object();
-    
-    {
-        let mut fields_to_upsert = new_upserted.mut_field_to_upsert();
-        for (key, value) in upsert_fields {
-            let mut entry = common::ObjectDiff_UpsertObjectModification_FieldToUpsertEntry::new();
-            entry.set_key(key);
-            entry.set_value(value.to_vec());
-            fields_to_upsert.push(entry)
-        }
-    }
-
-    {
-        let mut fields_to_delete = new_upserted.mut_field_to_delete();
-        for key in deleted_field_keys {
-            fields_to_delete.push(key);
-        }
-    }
-
-    new_diff.set_upserted_object(new_upserted);
-
-    new_diff
+    common::ObjectDiff::Upsert(upsert_fields, delete_fields)
 }

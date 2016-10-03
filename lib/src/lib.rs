@@ -1,4 +1,3 @@
-extern crate protobuf;
 extern crate uuid;
 extern crate rustc_serialize;
 extern crate bincode;
@@ -15,5 +14,4 @@ pub mod common;
 // The following are internal to the library.
 mod world_store;
 mod utils;
-mod internal_protocol;
 mod protocol;

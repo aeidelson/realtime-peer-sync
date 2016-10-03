@@ -3,7 +3,7 @@ use std::vec::Vec;
 use super::common;
 
 // Notifies the server of new client-originated changes (events).
-#[derive(RustcDecodable, RustcEncodable)]
+#[derive(RustcDecodable, RustcEncodable, Clone)]
 pub struct ClientServerSendNewEvents {
     // Required. The latest authoritative world verstion the client has received.
     // Can eventually be used to detect conflicts.

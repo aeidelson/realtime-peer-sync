@@ -62,7 +62,7 @@ impl Server {
         // Start broadcasting server to clients in same network.
         self.running_cancelable_threads.push(lifeline_ping_async_task::start(
             // TODO(aeidelson): These values should be (optionally?) provided in the config.
-            &8888u32, // udp broadcast port.
+            &8888u16, // udp broadcast port.
             "My server", // server name.
             &server_tcp_port, // Server tcp port
         ));

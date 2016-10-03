@@ -7,7 +7,7 @@ use super::send_new_events;
 use super::world_update;
 
 
-#[derive(RustcDecodable, RustcEncodable)]
+#[derive(RustcDecodable, RustcEncodable, Clone)]
 pub enum ClientServerMessagePayload {
     Connect(connect::ClientServerConnect),
     Disconnect(disconnect::ClientServerDisconnect),
@@ -17,7 +17,7 @@ pub enum ClientServerMessagePayload {
 }
 
 // A wrapper for messages between the client and the server. Sent over TCP.
-#[derive(RustcDecodable, RustcEncodable)]
+#[derive(RustcDecodable, RustcEncodable, Clone)]
 pub struct ClientServerMessage {
     // All information the server needs to know about the client.
     pub client_info: common::ClientInfo,
@@ -25,13 +25,13 @@ pub struct ClientServerMessage {
     pub payload: ClientServerMessagePayload,
 }
 
-#[derive(RustcDecodable, RustcEncodable)]
+#[derive(RustcDecodable, RustcEncodable, Clone)]
 pub enum ServerClientMessagePayload {
     WorldUpdate(world_update::ServerClientWorldUpdate),
 }
 
 // A wrapper for messages between the server and an authenticated client. Sent over UDP.
-#[derive(RustcDecodable, RustcEncodable)]
+#[derive(RustcDecodable, RustcEncodable, Clone)]
 pub struct ServerClientMessage {
     // All information a connected client needs to know about the server.
     pub server_info: common::ServerInfo,

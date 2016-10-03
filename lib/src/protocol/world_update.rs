@@ -1,6 +1,6 @@
 use super::common;
 
-#[derive(RustcDecodable, RustcEncodable)]
+#[derive(RustcDecodable, RustcEncodable, Clone)]
 pub struct ServerClientWorldUpdate {
     // The version of the world that the server believes the client has. The client should
     // re-connect if this is greater than the actual client version (since something went horribly
