@@ -1,11 +1,21 @@
 use std::net;
 use std::io::Read;
+use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
 
+use ::world_store::ServerWorldStore;
 use utils::thread;
+use ::protocol::common::ClientInfo;
+
+// Contains all the server state that the tcp handlers need to share.
+pub struct TcpHandlerContext {
+    pub connected_clients_lock: Arc<RwLock<HashMap<String, (ClientInfo, net::SocketAddr)>>>,
+    pub store_lock: Arc<RwLock<ServerWorldStore>>,
+}
 
 // Starts a thread to listen for and handle tcp requests.  In addition to the cancel sender, the
 // function returns server's tcp port (to broadcast to clients).
-pub fn start() -> (thread::CancelSender, u16) {
+pub fn start(context: TcpHandlerContext) -> (thread::CancelSender, u16) {
     let tcp_listener = net::TcpListener::bind("0.0.0.0:0").unwrap();
     let server_tcp_port = tcp_listener.local_addr().unwrap().port();
 
@@ -22,4 +32,7 @@ pub fn start() -> (thread::CancelSender, u16) {
     });
 
     (cancel_sender, server_tcp_port)
+}
+
+pub fn handle_connect(context: &TcpHandlerContext) {
 }

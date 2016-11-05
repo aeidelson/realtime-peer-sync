@@ -3,16 +3,17 @@ mod tcp_responder_async_task;
 
 use std::time;
 use std::io;
+use std::net;
+use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
 use ::world_store::ServerWorldStore;
-
 use utils::thread;
-
 use ::consumer_api::{
     WorldState,
     CalculationEvent,
 };
+use ::protocol::common::ClientInfo;
 
 // Configuration options, used when instantiating a new server.
 // Note: The make things as in-sync as possible, it's best for this to be called with the same
@@ -33,12 +34,16 @@ pub struct ServerConfig {
 pub fn new(config: ServerConfig) -> Server {
     // TODO: Confirm only one server created.
     return Server{
+        connected_clients_lock: Arc::new(RwLock::new(HashMap::new())),
         store_lock: Arc::new(RwLock::new(ServerWorldStore::new())),
         running_cancelable_threads: vec![],
     };
 }
 
 pub struct Server {
+    // Contains info about all connected clients.
+    connected_clients_lock: Arc<RwLock<HashMap<String, (ClientInfo, net::SocketAddr)>>>,
+
     // Contains the current state of the world.
     // This is considered to be the authoritative representation of the world.
     store_lock: Arc<RwLock<ServerWorldStore>>,
@@ -52,7 +57,12 @@ impl Server {
     pub fn start(&mut self) -> io::Result<()> {
 
         // Start listening for tcp requests.
-        let (cancel_sender, server_tcp_port) = tcp_responder_async_task::start();
+        let (cancel_sender, server_tcp_port) = tcp_responder_async_task::start(
+            tcp_responder_async_task::TcpHandlerContext {
+                connected_clients_lock: self.connected_clients_lock.clone(),
+                store_lock: self.store_lock.clone(),
+            });
+
         self.running_cancelable_threads.push(cancel_sender);
 
         println!("Server tcp port: {:?}", server_tcp_port);

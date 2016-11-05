@@ -72,16 +72,18 @@ impl Client {
 
     // Connect to the specified server.
     pub fn connect_to_server(&mut self, server: &DiscoveredServerInfo) -> io::Result<()> {
+        // TODO1: Start listening for world updates from the server.
+
         self.server_connection = Some(try!(net::TcpStream::connect(server.tcp_server_location)));
 
         let client_info = self.create_client_info();
-
         self.send_message_to_server(&message_wrapper::ClientServerMessage {
             client_info: client_info,
             payload: message_wrapper::ClientServerMessagePayload::Connect(
                 connect::ClientServerConnect { } 
             ),
         });
+
 
         Ok(())
     }
@@ -96,7 +98,6 @@ impl Client {
         )
     }
 
-    
     // Called to tell the system that a user interaction has started or ended.
     // This can be used to prevent clobbering of local state by remote state, as we
     // need to be careful to not mess with the user experience.
@@ -105,6 +106,7 @@ impl Client {
     pub fn continuous_user_interaction_started(&self) -> UserInteractionToken {
         String::from("token")
     }
+
     pub fn continuous_user_interaction_ended(&self, token: &UserInteractionToken) {
     }
 
@@ -128,6 +130,11 @@ impl Client {
         // TODO: Send the events to the actual server.
     }
 
+    // Shuts down and cleans up the client.
+    pub fn shutdown(self) -> io::Result<()> {
+        Ok(())
+    }
+
     fn send_message_to_server(&mut self, message: &message_wrapper::ClientServerMessage) {
         let server_stream = self.server_connection.as_mut().unwrap();
 
@@ -146,10 +153,5 @@ impl Client {
                 client_id: self.client_id.clone(),
             },
         }
-    }
-
-    // Shuts down and cleans up the client.
-    pub fn shutdown(self) -> io::Result<()> {
-        Ok(())
     }
 }
