@@ -21,6 +21,7 @@ fn main() {
     });
 
     let mut server = server::new(server::ServerConfig {
+        client_listen_udp_port: 8889u16,
         calculate_updates: calculate_updates_handler,
         desired_calculate_updates_frequency_hz: 5,
     });

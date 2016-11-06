@@ -29,11 +29,15 @@ pub struct ServerConfig {
 
     // Desired number of times to call calculate_updates per second.
     pub desired_calculate_updates_frequency_hz: u32,
+
+    // The port that the client is expected to be listing on for server udp messages.
+    pub client_listen_udp_port: u16,
 }
 
 pub fn new(config: ServerConfig) -> Server {
     // TODO: Confirm only one server created.
     return Server{
+        client_listen_udp_port: config.client_listen_udp_port,
         connected_clients_lock: Arc::new(RwLock::new(HashMap::new())),
         store_lock: Arc::new(RwLock::new(ServerWorldStore::new())),
         running_cancelable_threads: vec![],
@@ -41,6 +45,8 @@ pub fn new(config: ServerConfig) -> Server {
 }
 
 pub struct Server {
+    client_listen_udp_port: u16,
+
     // Contains info about all connected clients.
     connected_clients_lock: Arc<RwLock<HashMap<String, (ClientInfo, net::SocketAddr)>>>,
 
@@ -59,6 +65,7 @@ impl Server {
         // Start listening for tcp requests.
         let (cancel_sender, server_tcp_port) = tcp_responder_async_task::start(
             tcp_responder_async_task::TcpHandlerContext {
+                client_listen_udp_port: self.client_listen_udp_port,
                 connected_clients_lock: self.connected_clients_lock.clone(),
                 store_lock: self.store_lock.clone(),
             });

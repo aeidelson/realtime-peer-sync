@@ -21,6 +21,7 @@ use protocol::message_wrapper;
 use ::world_store::ClientWorldStore;
 use utils::converters;
 
+#[derive(Clone)]
 pub struct DiscoveredServerInfo {
     pub server_name: String,
     pub tcp_server_location: net::SocketAddr,
@@ -47,7 +48,7 @@ pub fn new(config: ClientConfig) -> Client {
     return Client {
         calculated_store_lock: Arc::new(RwLock::new(ClientWorldStore::new())),
         client_id: Uuid::new_v4().to_string(),
-        server_connection: None,
+        connected_server: None,
     };
 }
 
@@ -59,7 +60,10 @@ pub struct Client {
 
     client_id: String,
 
-    server_connection: Option<net::TcpStream>,
+    // The server that the client (thinks it) is connected to.
+    // TODO(aeidelson): We should better handle the case where the connect fails and the server
+    // doesn't know about the client.
+    connected_server: Option<DiscoveredServerInfo>
 }
 
 impl Client {
@@ -72,20 +76,17 @@ impl Client {
 
     // Connect to the specified server.
     pub fn connect_to_server(&mut self, server: &DiscoveredServerInfo) -> io::Result<()> {
-        // TODO1: Start listening for world updates from the server.
-
-        self.server_connection = Some(try!(net::TcpStream::connect(server.tcp_server_location)));
+        // TODO(aeidelson): Start listening for world updates from the server.
+        self.connected_server = Some(server.clone());
 
         let client_info = self.create_client_info();
-        self.send_message_to_server(&message_wrapper::ClientServerMessage {
+        return self.send_message_to_server(&message_wrapper::ClientServerMessage {
             client_info: client_info,
             payload: message_wrapper::ClientServerMessagePayload::Connect(
                 connect::ClientServerConnect { } 
             ),
         });
 
-
-        Ok(())
     }
 
     // Returns a copy of the current (local) state of the world.
@@ -135,15 +136,21 @@ impl Client {
         Ok(())
     }
 
-    fn send_message_to_server(&mut self, message: &message_wrapper::ClientServerMessage) {
-        let server_stream = self.server_connection.as_mut().unwrap();
+    fn send_message_to_server(&mut self, message: &message_wrapper::ClientServerMessage)  -> io::Result<()> {
 
         // TODO: Return result and handle error.
         let message_byte_vector =
             bincode::rustc_serialize::encode(message, bincode::SizeLimit::Infinite).unwrap();
         let message_byte_slice: &[u8] = message_byte_vector.as_slice();
 
-        server_stream.write_all(message_byte_slice).unwrap();
+        // TODO(aeidelson): This would be better if we didn't setup a tcp stream for each message.
+        // Should come up with some kind of message framing so we can keep the stream open.
+        let mut server_connection = try!(net::TcpStream::connect(
+                self.connected_server.as_ref().unwrap().tcp_server_location));
+        server_connection.write_all(message_byte_slice).unwrap();
+        server_connection.shutdown(net::Shutdown::Both).unwrap();
+
+        Ok(())
     }
 
     fn create_client_info(&self) -> common::ClientInfo {
