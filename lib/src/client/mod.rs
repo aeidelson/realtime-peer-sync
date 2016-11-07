@@ -32,6 +32,14 @@ pub type UserInteractionToken = String;
 
 // Configuration options, used when instantiating a new client.
 pub struct ClientConfig {
+    // Port specifically for listening for udp broadcasts for server discovery. Corresponding
+    // server field must be configured with same port.
+    pub udp_server_broadcast_listener_port: u16,
+  
+    // Port to listen for most important messages from server. Corresponding server field must be
+    // configured with same port.
+    pub udp_server_message_listener_port: u16,
+
     // Transforms the world state on a loop.
     // This is used for physics, AI, or other calculations.
     pub calculate_updates: fn(
@@ -46,6 +54,8 @@ pub struct ClientConfig {
 pub fn new(config: ClientConfig) -> Client {
     // TODO: Confirm only one client created.
     return Client {
+        udp_server_message_listener_port: config.udp_server_message_listener_port,
+        udp_server_broadcast_listener_port: config.udp_server_broadcast_listener_port,
         calculated_store_lock: Arc::new(RwLock::new(ClientWorldStore::new())),
         client_id: Uuid::new_v4().to_string(),
         connected_server: None,
@@ -53,6 +63,9 @@ pub fn new(config: ClientConfig) -> Client {
 }
 
 pub struct Client {
+    udp_server_broadcast_listener_port: u16,
+    udp_server_message_listener_port: u16,
+
     // Contains the real-time state of the world. Note that this can include optimistic state not
     // povided by the server, like local server calculations. This is what is queried when
     // `get_world_state()` is called.
@@ -71,7 +84,7 @@ impl Client {
     // A blocking function that listens for servers for `discovery_time`, before reporting the
     // results.
     pub fn find_servers(&self, discovery_time: time::Duration) -> io::Result<Vec<DiscoveredServerInfo>> {
-        Ok(server_discovery_sync_task::start(&8888u16, discovery_time))
+        Ok(server_discovery_sync_task::start(&self.udp_server_broadcast_listener_port, discovery_time))
     }
 
     // Connect to the specified server.

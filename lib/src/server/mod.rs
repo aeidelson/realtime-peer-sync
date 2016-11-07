@@ -31,13 +31,15 @@ pub struct ServerConfig {
     pub desired_calculate_updates_frequency_hz: u32,
 
     // The port that the client is expected to be listing on for server udp messages.
-    pub client_listen_udp_port: u16,
+    pub client_message_udp_port: u16,
+    pub client_broadcast_udp_port: u16,
 }
 
 pub fn new(config: ServerConfig) -> Server {
     // TODO: Confirm only one server created.
     return Server{
-        client_listen_udp_port: config.client_listen_udp_port,
+        client_message_udp_port: config.client_message_udp_port,
+        client_broadcast_udp_port: config.client_broadcast_udp_port,
         connected_clients_lock: Arc::new(RwLock::new(HashMap::new())),
         store_lock: Arc::new(RwLock::new(ServerWorldStore::new())),
         running_cancelable_threads: vec![],
@@ -45,7 +47,8 @@ pub fn new(config: ServerConfig) -> Server {
 }
 
 pub struct Server {
-    client_listen_udp_port: u16,
+    client_message_udp_port: u16,
+    client_broadcast_udp_port: u16,
 
     // Contains info about all connected clients.
     connected_clients_lock: Arc<RwLock<HashMap<String, (ClientInfo, net::SocketAddr)>>>,
@@ -65,7 +68,7 @@ impl Server {
         // Start listening for tcp requests.
         let (cancel_sender, server_tcp_port) = tcp_responder_async_task::start(
             tcp_responder_async_task::TcpHandlerContext {
-                client_listen_udp_port: self.client_listen_udp_port,
+                client_message_udp_port: self.client_message_udp_port,
                 connected_clients_lock: self.connected_clients_lock.clone(),
                 store_lock: self.store_lock.clone(),
             });
@@ -79,7 +82,7 @@ impl Server {
         // Start broadcasting server to clients in same network.
         self.running_cancelable_threads.push(lifeline_ping_async_task::start(
             // TODO(aeidelson): These values should be (optionally?) provided in the config.
-            &8888u16, // udp broadcast port.
+            &self.client_broadcast_udp_port, // udp broadcast port.
             "My server", // server name.
             &server_tcp_port, // Server tcp port
         ));

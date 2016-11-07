@@ -15,7 +15,7 @@ use ::protocol::connect::{ClientServerConnect};
 // Contains all the server state that the tcp handlers need to share.
 #[derive(Clone)]
 pub struct TcpHandlerContext {
-    pub client_listen_udp_port: u16,
+    pub client_message_udp_port: u16,
     pub connected_clients_lock: Arc<RwLock<HashMap<String, (ClientInfo, net::SocketAddr)>>>,
     pub store_lock: Arc<RwLock<ServerWorldStore>>,
 }
@@ -59,7 +59,7 @@ pub fn handle_connect(
     connect_message: &ClientServerConnect,
 ) {
     // Construct the address that the client is listening on.
-    let client_udp_addr = net::SocketAddr::new(remote_addr.ip(), context.client_listen_udp_port);
+    let client_udp_addr = net::SocketAddr::new(remote_addr.ip(), context.client_message_udp_port);
     let mut connected_clients = context.connected_clients_lock.write().unwrap();
     connected_clients.insert(
         client_info.public_info.client_id.clone(),

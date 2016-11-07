@@ -16,12 +16,15 @@ use RPS::consumer_api::{WorldState, CalculationEvent};
 
 fn main() {
     let mut client = client::new(client::ClientConfig {
+        udp_server_broadcast_listener_port: 8888u16,
+        udp_server_message_listener_port: 8889u16,
         calculate_updates: calculate_updates_handler,
         desired_calculate_updates_frequency_hz: 5,
     });
 
     let mut server = server::new(server::ServerConfig {
-        client_listen_udp_port: 8889u16,
+        client_broadcast_udp_port: 8888u16,
+        client_message_udp_port: 8889u16,
         calculate_updates: calculate_updates_handler,
         desired_calculate_updates_frequency_hz: 5,
     });
