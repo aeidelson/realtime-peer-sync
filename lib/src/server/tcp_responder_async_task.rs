@@ -5,8 +5,9 @@ use std::sync::{Arc, RwLock};
 
 use bincode;
 
-use ::world_store::ServerWorldStore;
 use utils::thread;
+use ::world_store::ServerWorldStore;
+use super::common::ConnectedClientInfo;
 use ::protocol::common::ClientInfo;
 use ::protocol::message_wrapper::{ClientServerMessage, ClientServerMessagePayload};
 use ::protocol::connect::{ClientServerConnect};
@@ -16,7 +17,7 @@ use ::protocol::connect::{ClientServerConnect};
 #[derive(Clone)]
 pub struct TcpHandlerContext {
     pub client_message_udp_port: u16,
-    pub connected_clients_lock: Arc<RwLock<HashMap<String, (ClientInfo, net::SocketAddr)>>>,
+    pub connected_clients_lock: Arc<RwLock<HashMap<String, ConnectedClientInfo>>>,
     pub store_lock: Arc<RwLock<ServerWorldStore>>,
 }
 
@@ -63,7 +64,11 @@ pub fn handle_connect(
     let mut connected_clients = context.connected_clients_lock.write().unwrap();
     connected_clients.insert(
         client_info.public_info.client_id.clone(),
-        (client_info.clone(), client_udp_addr.clone()));
+        ConnectedClientInfo {
+            client_info: client_info.clone(),
+            socket_addr: client_udp_addr.clone(),
+            acked_world_version: 0,
+        });
 
     println!("> Client connected!");
 }

@@ -1,6 +1,6 @@
 
 
-// Converters to go from the internal (protobuf) API to the public (rusty) API.
+// Converters to go from the internal API to the public API.
 
 pub mod internal_to_public {
     use consumer_api;
@@ -41,7 +41,7 @@ pub mod internal_to_public {
 }
 
 
-// Converters to go from the public (rusty) API to the internal (protobuf) API.
+// Converters to go from the public API to the internal API.
 
 pub mod public_to_internal {
     use consumer_api;

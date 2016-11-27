@@ -1,5 +1,7 @@
 mod lifeline_ping_async_task;
+mod world_update_async_task;
 mod tcp_responder_async_task;
+mod common;
 
 use std::time;
 use std::io;
@@ -14,6 +16,8 @@ use ::consumer_api::{
     CalculationEvent,
 };
 use ::protocol::common::ClientInfo;
+use self::common::ConnectedClientInfo;
+
 
 // Configuration options, used when instantiating a new server.
 // Note: The make things as in-sync as possible, it's best for this to be called with the same
@@ -51,7 +55,7 @@ pub struct Server {
     client_broadcast_udp_port: u16,
 
     // Contains info about all connected clients.
-    connected_clients_lock: Arc<RwLock<HashMap<String, (ClientInfo, net::SocketAddr)>>>,
+    connected_clients_lock: Arc<RwLock<HashMap<String, ConnectedClientInfo>>>,
 
     // Contains the current state of the world.
     // This is considered to be the authoritative representation of the world.
@@ -77,7 +81,13 @@ impl Server {
 
         println!("Server tcp port: {:?}", server_tcp_port);
 
-        // TODO(aeidelson): Start sending updates to connected clients
+        // Send world state updates to connected clients.
+        self.running_cancelable_threads.push(world_update_async_task::start(
+            self.connected_clients_lock.clone(),
+            self.store_lock.clone(),
+            // TODO(aeidelson): This should be provided in the config.
+            5,
+        ));
  
         // Start broadcasting server to clients in same network.
         self.running_cancelable_threads.push(lifeline_ping_async_task::start(

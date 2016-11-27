@@ -2,8 +2,8 @@
 // the world.
 //
 // Everything in world_store speaks in terms of the `internal_protocol`. It may make sense to move
-// to something internal for efficency (protobufs are pretty big), and to avoid diverging API's.
-// But this should be ok for right now.
+// to something internal for efficency, and to avoid diverging API's. But this should be ok
+// for right now.
 //
 // Note: These stores aren't thread safe, so it's up to the caller to lock them appropriately.
 
